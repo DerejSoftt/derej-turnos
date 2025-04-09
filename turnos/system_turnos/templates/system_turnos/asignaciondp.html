@@ -1,0 +1,910 @@
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Asignación de Departamentos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            touch-action: manipulation;
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Panel de navegación vertical */
+        .nav-panel {
+            background-color: #3b82f6;
+            color: white;
+            width: 250px;
+            min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        
+        .nav-logo {
+            padding: 20px;
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-container {
+            display: flex;
+            flex-direction: column;
+            padding: 15px 0;
+        }
+
+        .nav-container a {
+            color: #ffffff;
+            text-decoration: none;
+        }
+        
+        .nav-item {
+            padding: 15px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .nav-item:active {
+            background-color: #2563eb;
+        }
+        
+        .nav-item.active {
+            background-color: #2563eb;
+        }
+        
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background-color: white;
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+        
+        /* Botón para mostrar/ocultar navegación en móviles */
+        .nav-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 200;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 8px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Contenido principal */
+        .main-content {
+            flex: 1;
+            min-width: 0; /* Importante para que flex funcione correctamente */
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        h1 {
+            font-size: 28px;
+            color: #333;
+        }
+        
+        /* Buscador */
+        .search-box {
+            display: flex;
+            background-color: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .search-box input {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            outline: none;
+            font-size: 16px;
+        }
+        
+        .search-box button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        /* Tabla de usuarios */
+        .users-table {
+            width: 100%;
+            background-color: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .table-header {
+            background-color: #f8fafc;
+            padding: 15px 20px;
+            font-weight: bold;
+            display: grid;
+            grid-template-columns: 80px 1fr 1fr 1fr auto;
+            gap: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .table-row {
+            display: grid;
+            grid-template-columns: 80px 1fr 1fr 1fr auto;
+            gap: 10px;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            align-items: center;
+        }
+        
+        .table-row:last-child {
+            border-bottom: none;
+        }
+        
+        .table-row:active {
+            background-color: #f8fafc;
+        }
+        
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #666;
+            font-size: 20px;
+        }
+        
+        .user-name {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .user-email {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        /* Selector de departamento */
+        .dept-select {
+            position: relative;
+            width: 100%;
+        }
+        
+        .dept-select-btn {
+            width: 100%;
+            padding: 10px 15px;
+            background-color: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .dept-select-btn:after {
+            content: '▼';
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .dept-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            margin-top: 5px;
+            z-index: 10;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dept-options.show {
+            max-height: 300px;
+        }
+        
+        .dept-option {
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .dept-option:hover, .dept-option:active {
+            background-color: #f0f7ff;
+        }
+        
+        /* Botón de acción */
+        .action-btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        
+        .action-btn:hover, .action-btn:active {
+            background-color: #2563eb;
+        }
+        
+        /* Paginación */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .page-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            background-color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .page-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        /* Modal para asignar departamento */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .modal {
+            background-color: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 22px;
+            font-weight: bold;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .modal-body {
+            margin-bottom: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 16px;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 15px;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+        
+        .cancel-btn {
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            background-color: white;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .save-btn {
+            padding: 12px 20px;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        /* Estilos para pantallas pequeñas */
+        @media (max-width: 992px) {
+            .table-header, .table-row {
+                grid-template-columns: 60px 1fr 1fr auto;
+            }
+            
+            .user-email {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            
+            .nav-panel {
+                position: fixed;
+                width: 250px;
+                transform: translateX(-100%);
+                min-height: 100vh;
+                height: 100%;
+            }
+            
+            .nav-panel.show {
+                transform: translateX(0);
+            }
+            
+            .nav-toggle {
+                display: block;
+            }
+            
+            .main-content {
+                margin-top: 60px; /* Espacio para el botón de navegación */
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .search-box {
+                max-width: 100%;
+            }
+            
+            .table-header, .table-row {
+                grid-template-columns: 60px 1fr auto;
+            }
+            
+            .dept-select {
+                display: none;
+            }
+        }
+        
+        /* Overlay para cerrar menú en móviles */
+        .nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 90;
+            display: none;
+        }
+        
+        .nav-overlay.show {
+            display: block;
+        }
+        
+        /* Indicador de carga */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Toast de notificación */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4ade80;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .toast.show {
+            opacity: 1;
+        }
+        
+        .toast.error {
+            background-color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <!-- Botón para mostrar/ocultar navegación en móviles -->
+    <button class="nav-toggle" id="navToggle">☰</button>
+    
+    <!-- Overlay para cerrar menú en móviles -->
+    <div class="nav-overlay" id="navOverlay"></div>
+    
+    <!-- Panel de navegación vertical -->
+    <div class="nav-panel" id="navPanel">
+        <div class="nav-logo">Hospital Admin</div>
+        <div class="nav-container">
+            <div class="nav-item active">
+                
+                <span class="nav-icon">👤</span>
+                <a href="{% url 'creacionuser' %}">Usuarios</a> 
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">🏥</span>
+                <a href="{% url 'departamentos'%}">Departamentos</a> 
+            </div>
+            <div class="nav-item active">
+                <span class="nav-icon">👥</span>
+               <a href="{% url 'clientes' %}">Clientes</a> 
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">🔄</span>
+               <a href="#">Asignaciones</a> 
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">📊</span>
+               <a href=""> Reportes</a> 
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">⚙️</span>
+               <a href="">Configuración </a> 
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contenido principal -->
+    <div class="main-content">
+        <div class="container">
+            <div class="header">
+                <h1>Asignación de Departamentos</h1>
+                <div class="search-box">
+                    <input type="text" placeholder="Buscar usuario..." id="searchInput">
+                    <button>Buscar</button>
+                </div>
+            </div>
+            
+            <!-- Tabla de usuarios -->
+            <div class="users-table">
+                <div class="table-header">
+                    <div>Avatar</div>
+                    <div>Nombre</div>
+                    <div>Email</div>
+                    <div>Departamento</div>
+                    <div>Acción</div>
+                </div>
+                
+                <!-- Filas de usuarios (se generarán dinámicamente) -->
+                <div id="usersContainer">
+                    <!-- Las filas se generarán con JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Paginación -->
+            <!-- <div class="pagination">
+                <div class="page-btn">1</div>
+                <div class="page-btn active">2</div>
+                <div class="page-btn">3</div>
+                <div class="page-btn">4</div>
+                <div class="page-btn">5</div>
+            </div> -->
+        </div>
+    </div>
+    
+    <!-- Modal para asignar departamento -->
+    <div class="modal-overlay" id="assignModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Asignar Departamento</div>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Usuario</label>
+                    <div id="modalUserName" class="user-name">-</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="deptSelect">Departamento</label>
+                    <select class="form-select" id="deptSelect">
+                        <option value="">Seleccionar departamento</option>
+                        <option value="surgery">Cirugía</option>
+                        <option value="pediatrics">Pediatría</option>
+                        <option value="cardiology">Cardiología</option>
+                        <option value="internal-medicine">Medicina Interna</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-btn" id="cancelAssign">Cancelar</button>
+                <button class="save-btn" id="saveAssign">Guardar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast de notificación -->
+    <div class="toast" id="toast">Cambios guardados correctamente</div>
+    
+    <script>
+        // Datos de ejemplo
+        const users = [
+            { id: 1, name: 'Ana García', email: 'ana.garcia@ejemplo.com', department: 'Cirugía', avatar: 'AG' },
+            { id: 2, name: 'Carlos Rodríguez', email: 'carlos.rodriguez@ejemplo.com', department: 'Pediatría', avatar: 'CR' },
+            { id: 3, name: 'Elena Martínez', email: 'elena.martinez@ejemplo.com', department: '', avatar: 'EM' },
+            { id: 4, name: 'Javier López', email: 'javier.lopez@ejemplo.com', department: 'Cardiología', avatar: 'JL' },
+            { id: 5, name: 'María Sánchez', email: 'maria.sanchez@ejemplo.com', department: 'Medicina Interna', avatar: 'MS' },
+            { id: 6, name: 'Pedro Fernández', email: 'pedro.fernandez@ejemplo.com', department: '', avatar: 'PF' },
+            { id: 7, name: 'Laura Gómez', email: 'laura.gomez@ejemplo.com', department: 'Cirugía', avatar: 'LG' },
+            { id: 8, name: 'Roberto Díaz', email: 'roberto.diaz@ejemplo.com', department: 'Pediatría', avatar: 'RD' }
+        ];
+        
+        // Mapeo de departamentos
+        const departmentMap = {
+            'surgery': 'Cirugía',
+            'pediatrics': 'Pediatría',
+            'cardiology': 'Cardiología',
+            'internal-medicine': 'Medicina Interna'
+        };
+        
+        // Elementos DOM
+        const usersContainer = document.getElementById('usersContainer');
+        const assignModal = document.getElementById('assignModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelAssign = document.getElementById('cancelAssign');
+        const saveAssign = document.getElementById('saveAssign');
+        const modalUserName = document.getElementById('modalUserName');
+        const deptSelect = document.getElementById('deptSelect');
+        const toast = document.getElementById('toast');
+        const searchInput = document.getElementById('searchInput');
+        const navItems = document.querySelectorAll('.nav-item');
+        const navToggle = document.getElementById('navToggle');
+        const navPanel = document.getElementById('navPanel');
+        const navOverlay = document.getElementById('navOverlay');
+        
+        // Variables globales
+        let currentUserId = null;
+        
+        // Renderizar usuarios
+        function renderUsers(usersList) {
+            usersContainer.innerHTML = '';
+            
+            usersList.forEach(user => {
+                const row = document.createElement('div');
+                row.className = 'table-row';
+                
+                row.innerHTML = `
+                    <div class="user-avatar">${user.avatar}</div>
+                    <div>
+                        <div class="user-name">${user.name}</div>
+                        <div class="user-email">${user.email}</div>
+                    </div>
+                    <div class="user-email">${user.email}</div>
+                    <div class="dept-select">
+                        <button class="dept-select-btn" data-user-id="${user.id}">
+                            ${user.department || 'Sin asignar'}
+                        </button>
+                    </div>
+                    <div>
+                        <button class="action-btn" data-user-id="${user.id}">Asignar</button>
+                    </div>
+                `;
+                
+                usersContainer.appendChild(row);
+            });
+            
+            // Agregar eventos a los botones de acción
+            document.querySelectorAll('.action-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const userId = parseInt(this.getAttribute('data-user-id'));
+                    openAssignModal(userId);
+                });
+                
+                // Evento táctil
+                btn.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    const userId = parseInt(this.getAttribute('data-user-id'));
+                    openAssignModal(userId);
+                });
+            });
+            
+            // Agregar eventos a los selectores de departamento
+            document.querySelectorAll('.dept-select-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const userId = parseInt(this.getAttribute('data-user-id'));
+                    openAssignModal(userId);
+                });
+                
+                // Evento táctil
+                btn.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    const userId = parseInt(this.getAttribute('data-user-id'));
+                    openAssignModal(userId);
+                });
+            });
+        }
+        
+        // Abrir modal de asignación
+        function openAssignModal(userId) {
+            currentUserId = userId;
+            const user = users.find(u => u.id === userId);
+            
+            if (user) {
+                modalUserName.textContent = user.name;
+                
+                // Seleccionar el departamento actual en el select
+                let deptValue = '';
+                
+                if (user.department === 'Cirugía') deptValue = 'surgery';
+                else if (user.department === 'Pediatría') deptValue = 'pediatrics';
+                else if (user.department === 'Cardiología') deptValue = 'cardiology';
+                else if (user.department === 'Medicina Interna') deptValue = 'internal-medicine';
+                
+                deptSelect.value = deptValue;
+                
+                // Mostrar modal
+                assignModal.classList.add('show');
+                
+                // Proporcionar feedback táctil
+                if (window.navigator && window.navigator.vibrate) {
+                    window.navigator.vibrate(50);
+                }
+            }
+        }
+        
+        // Cerrar modal
+        function closeAssignModal() {
+            assignModal.classList.remove('show');
+            currentUserId = null;
+        }
+        
+        // Guardar asignación
+        function saveAssignment() {
+            if (currentUserId) {
+                const selectedDept = deptSelect.value;
+                const deptName = departmentMap[selectedDept] || '';
+                
+                // Actualizar datos
+                const userIndex = users.findIndex(u => u.id === currentUserId);
+                if (userIndex !== -1) {
+                    users[userIndex].department = deptName;
+                    
+                    // Actualizar UI
+                    renderUsers(users);
+                    
+                    // Mostrar toast de confirmación
+                    showToast('Departamento asignado correctamente');
+                }
+                
+                // Cerrar modal
+                closeAssignModal();
+            }
+        }
+        
+        // Mostrar toast de notificación
+        function showToast(message, isError = false) {
+            toast.textContent = message;
+            toast.className = isError ? 'toast error show' : 'toast show';
+            
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 3000);
+        }
+        
+        // Filtrar usuarios
+        function filterUsers(query) {
+            if (!query) {
+                renderUsers(users);
+                return;
+            }
+            
+            const filtered = users.filter(user => 
+                user.name.toLowerCase().includes(query.toLowerCase()) || 
+                user.email.toLowerCase().includes(query.toLowerCase()) ||
+                (user.department && user.department.toLowerCase().includes(query.toLowerCase()))
+            );
+            
+            renderUsers(filtered);
+        }
+        
+        // Mostrar/ocultar navegación en móviles
+        function toggleNav() {
+            navPanel.classList.toggle('show');
+            navOverlay.classList.toggle('show');
+            
+            // Proporcionar feedback táctil
+            if (window.navigator && window.navigator.vibrate) {
+                window.navigator.vibrate(50);
+            }
+        }
+        
+        // Eventos
+        closeModal.addEventListener('click', closeAssignModal);
+        cancelAssign.addEventListener('click', closeAssignModal);
+        saveAssign.addEventListener('click', saveAssignment);
+        
+        // Evento de búsqueda
+        searchInput.addEventListener('input', function() {
+            filterUsers(this.value);
+        });
+        
+        // Eventos para navegación
+        navItems.forEach(item => {
+            item.addEventListener('click', function() {
+                navItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Proporcionar feedback táctil
+                if (window.navigator && window.navigator.vibrate) {
+                    window.navigator.vibrate(50);
+                }
+                
+                // Cerrar menú en móviles después de seleccionar
+                if (window.innerWidth <= 768) {
+                    toggleNav();
+                }
+                
+                // Aquí se podría cambiar el contenido según la pestaña seleccionada
+            });
+            
+            // Evento táctil
+            item.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                navItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Proporcionar feedback táctil
+                if (window.navigator && window.navigator.vibrate) {
+                    window.navigator.vibrate(50);
+                }
+                
+                // Cerrar menú en móviles después de seleccionar
+                if (window.innerWidth <= 768) {
+                    toggleNav();
+                }
+            });
+        });
+        
+        // Eventos para mostrar/ocultar navegación
+        navToggle.addEventListener('click', toggleNav);
+        navToggle.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            toggleNav();
+        });
+        
+        navOverlay.addEventListener('click', toggleNav);
+        navOverlay.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            toggleNav();
+        });
+        
+        // Inicializar
+        renderUsers(users);
+    </script>
+</body>
+</html>

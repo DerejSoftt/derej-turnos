@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Registro de Clientes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            touch-action: manipulation;
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Panel de navegación vertical */
+        .nav-panel {
+            background-color: #3b82f6;
+            color: white;
+            width: 250px;
+            min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        
+        .nav-logo {
+            padding: 20px;
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-container {
+            display: flex;
+            flex-direction: column;
+            padding: 15px 0;
+        }
+        
+
+        .nav-container a {
+            color: #ffffff;
+            text-decoration: none;
+            width: 30%;
+        }
+
+
+        .nav-item {
+            padding: 15px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .nav-item:active {
+            background-color: #2563eb;
+        }
+        
+        .nav-item.active {
+            background-color: #2563eb;
+        }
+        
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background-color: white;
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+        
+        /* Botón para mostrar/ocultar navegación en móviles */
+        .nav-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 200;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 8px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Contenido principal */
+        .main-content {
+         
+            min-width: 0; /* Importante para que flex funcione correctamente */
+           
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        h1 {
+            font-size: 28px;
+            color: #333;
+        }
+        
+        /* Buscador */
+        .search-box {
+            display: flex;
+            background-color: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .search-box input {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            outline: none;
+            font-size: 16px;
+        }
+        
+        .search-box button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        /* Tarjeta para agregar cliente */
+        .add-client-card {
+            position: relative;
+            left: 50%;
+            width: 200%;
+           
+            background-color: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+            
+           
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus {
+            border-color: #3b82f6;
+            outline: none;
+        }
+        
+        /* Tabla de clientes */
+        .clients-table {
+            width: 100%;
+            background-color: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .table-header {
+            background-color: #f8fafc;
+            padding: 15px 20px;
+            font-weight: bold;
+            display: grid;
+            grid-template-columns: 150px 1fr 120px;
+            gap: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .table-row {
+            display: grid;
+            grid-template-columns: 150px 1fr 120px;
+            gap: 15px;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            align-items: center;
+        }
+        
+        .table-row:last-child {
+            border-bottom: none;
+        }
+        
+        .table-row:active {
+            background-color: #f8fafc;
+        }
+        
+        .client-id {
+            font-family: monospace;
+            font-size: 14px;
+            color: #666;
+            background-color: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .client-name {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .edit-btn, .delete-btn {
+            border: none;
+            border-radius: 6px;
+            padding: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+        }
+        
+        .edit-btn {
+            background-color: #f0f7ff;
+            color: #3b82f6;
+        }
+        
+        .delete-btn {
+            background-color: #fee2e2;
+            color: #ef4444;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+        }
+        
+        .btn-primary:hover, .btn-primary:active {
+            background-color: #2563eb;
+        }
+        
+        .btn-outline {
+            background-color: white;
+            border: 2px solid #e0e0e0;
+            color: #666;
+        }
+        
+        .btn-outline:hover, .btn-outline:active {
+            border-color: #d1d5db;
+            background-color: #f9fafb;
+        }
+        
+        /* Modal de confirmación */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .modal {
+            background-color: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .modal-body {
+            margin-bottom: 25px;
+            color: #555;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+        
+        /* Paginación */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .page-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            background-color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .page-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        /* Estilos para pantallas pequeñas */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            
+            .nav-panel {
+                position: fixed;
+                width: 250px;
+                transform: translateX(-100%);
+                min-height: 100vh;
+                height: 100%;
+            }
+            
+            .nav-panel.show {
+                transform: translateX(0);
+            }
+            
+            .nav-toggle {
+                display: block;
+            }
+            
+            .main-content {
+                margin-top: 60px; /* Espacio para el botón de navegación */
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .search-box {
+                max-width: 100%;
+            }
+        }
+        
+        /* Overlay para cerrar menú en móviles */
+        .nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 90;
+            display: none;
+        }
+        
+        .nav-overlay.show {
+            display: block;
+        }
+        
+        /* Toast de notificación */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4ade80;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .toast.show {
+            opacity: 1;
+        }
+        
+        .toast.error {
+            background-color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <!-- Botón para mostrar/ocultar navegación en móviles -->
+    <button class="nav-toggle" id="navToggle">☰</button>
+    
+    <!-- Overlay para cerrar menú en móviles -->
+    <div class="nav-overlay" id="navOverlay"></div>
+    
+    <!-- Panel de navegación vertical -->
+    <div class="nav-panel" id="navPanel">
+        <div class="nav-logo">Hospital Admin</div>
+        <div class="nav-container">
+            <div class="nav-item">
+                <span class="nav-icon">👤</span>
+              <a href="{% url 'creacionuser' %}">Usuarios</a>  
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">🏥</span>
+               <a href="{% url 'departamentos' %}">Departamentos</a> 
+            </div>
+            <div class="nav-item active">
+                <span class="nav-icon">👥</span>
+               <a href="#">Clientes</a> 
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">🔄</span>
+               <a href="{% url 'asignaciondp' %}">Asignaciones</a> 
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">📊</span>
+              <a href="">Reportes</a>  
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">⚙️</span>
+               <a href=""> Configuración</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contenido principal -->
+    <div class="main-content">
+        <div class="container">
+            <div class="header">
+                <h1>Registro de Clientes</h1>
+                <!-- <div class="search-box">
+                    <input type="text" placeholder="Buscar cliente..." id="searchInput">
+                    <button>Buscar</button>
+                </div> -->
+            </div>
+            
+            <!-- Formulario para agregar cliente -->
+            <div class="add-client-card">
+                <div class="card-title">Agregar Nuevo Cliente</div>
+                <form id="addClientForm" action="/guardar-cliente" method="POST">
+                    {% csrf_token %}
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="idNumber">Cédula</label>
+                            <input type="text" id="idNumber" name="cedula" class="form-input" placeholder="Ej: 12345678" required maxlength="11">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="firstName">Nombre</label>
+                            <input type="text" id="firstName" name="nombre" class="form-input" placeholder="Ej: Juan" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="lastName">Apellido</label>
+                            <input type="text" id="lastName" name="apellido" class="form-input" placeholder="Ej: Pérez" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="display: flex; justify-content: center;">
+                            <button type="submit" class="btn btn-primary">Agregar Cliente</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Tabla de clientes -->
+            <!-- <div class="clients-table">
+                <div class="table-header">
+                    <div>Cédula</div>
+                    <div>Nombre Completo</div>
+                    <div>Acciones</div>
+                </div>
+                
+                 Filas de clientes (se generarán dinámicamente) -->
+                <!-- <div id="clientsContainer">
+                   
+                </div>
+            </div> -->
+             
+            <!-- Paginación -->
+            <!-- <div class="pagination">
+                <div class="page-btn active">1</div>
+                <div class="page-btn">2</div>
+                <div class="page-btn">3</div>
+                <div class="page-btn">4</div>
+                <div class="page-btn">5</div>
+            </div>
+        </div>
+    </div> -->
+    
+    <!-- Modal de confirmación para eliminar -->
+    <!-- <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Confirmar Eliminación</div>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                ¿Está seguro que desea eliminar al cliente <strong id="deleteClientName"></strong>? Esta acción no se puede deshacer.
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="cancelDelete">Cancelar</button>
+                <button class="btn btn-primary" id="confirmDelete" style="background-color: #ef4444;">Eliminar</button>
+            </div>
+        </div>
+    </div> -->
+    
+    <!-- Modal para editar cliente -->
+    <!-- <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Editar Cliente</div>
+                <button class="close-btn" id="closeEditModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editClientForm">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label class="form-label" for="editIdNumber">Cédula</label>
+                        <input type="text" id="editIdNumber" class="form-input" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label class="form-label" for="editFirstName">Nombre</label>
+                        <input type="text" id="editFirstName" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="editLastName">Apellido</label>
+                        <input type="text" id="editLastName" class="form-input" required>
+                    </div>
+                </form>
+            </div> -->
+           <!--  <div class="modal-footer">
+                <button class="btn btn-outline" id="cancelEdit">Cancelar</button>
+                <button class="btn btn-primary" id="saveEdit">Guardar Cambios</button>
+            </div>
+        </div>
+    </div> -->
+    
+    <!-- Toast de notificación -->
+    <!-- <div class="toast" id="toast">Cliente agregado correctamente</div> -->
+    
+    <script>
+      document.getElementById("addClientForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    let formData = new FormData(this);
+
+    fetch("guardar_cliente", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.mensaje);
+        location.reload();  // 🔄 Recarga la página automáticamente
+    })
+    .catch(error => console.error("Error:", error));
+});
+
+    </script>
+</body>
+</html>

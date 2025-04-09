@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Creación de Usuarios</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            touch-action: manipulation;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .nav-panel {
+            background-color: #3b82f6;
+            color: white;
+            width: 200px;
+            min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        
+        .nav-logo {
+            padding: 20px;
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-container {
+            display: flex;
+            flex-direction: column;
+            padding: 15px 0;
+        }
+        
+        .nav-container a {
+            color: #ffffff;
+            text-decoration: none;
+        }
+        
+        .nav-item {
+            padding: 15px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .nav-item.active {
+            background-color: #2563eb;
+        }
+        
+        .main-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        h1 {
+            font-size: 28px;
+            color: #333;
+        }
+        
+        .search-box {
+            display: flex;
+            background-color: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .search-box input {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            outline: none;
+            font-size: 16px;
+        }
+        
+        .search-box button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .add-user-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus {
+            border-color: #3b82f6;
+            outline: none;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 15px;
+        }
+        
+        /* ESTILOS CORREGIDOS PARA LA TABLA */
+        .users-table {
+            width: 100%;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            overflow-x: auto;
+            position: relative;
+        }
+        
+        .users-table:after {
+            content: "";
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 30px;
+            background: linear-gradient(to right, transparent, rgba(0,0,0,0.05));
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .users-table.scrolling:after {
+            opacity: 1;
+        }
+        
+        .table-container {
+            min-width: 1000px;
+        }
+        
+        .table-header {
+            background-color: #f8fafc;
+            padding: 15px 20px;
+            font-weight: bold;
+            display: grid;
+            grid-template-columns: 80px minmax(150px, 1fr) 120px minmax(200px, 1fr) 120px 120px minmax(150px, 1fr) 120px;
+            gap: 15px;
+            border-bottom: 2px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+        }
+        
+        .table-row {
+            display: grid;
+            grid-template-columns: 80px minmax(150px, 1fr) 120px minmax(200px, 1fr) 120px 120px minmax(150px, 1fr) 120px;
+            gap: 15px;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            align-items: center;
+        }
+        
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #666;
+            font-size: 20px;
+        }
+        
+        .user-name {
+            font-weight: bold;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .user-role {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .user-id {
+            font-family: monospace;
+            font-size: 14px;
+            color: #666;
+            background-color: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .user-email {
+            color: #666;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .user-username, .user-password {
+            font-family: monospace;
+            font-size: 14px;
+            color: #666;
+            background-color: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .user-dept {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .edit-btn, .delete-btn {
+            border: none;
+            border-radius: 6px;
+            padding: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+        }
+        
+        .edit-btn {
+            background-color: #f0f7ff;
+            color: #3b82f6;
+        }
+        
+        .delete-btn {
+            background-color: #fee2e2;
+            color: #ef4444;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4ade80;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .toast.show {
+            opacity: 1;
+        }
+        
+        .toast.error {
+            background-color: #ef4444;
+        }
+
+        /* Estilos responsivos */
+        @media (max-width: 1200px) {
+            .table-header, .table-row {
+                grid-template-columns: 60px minmax(120px, 1fr) 100px minmax(150px, 1fr) 100px 100px minmax(120px, 1fr) 100px;
+                gap: 10px;
+                padding: 10px 15px;
+            }
+            
+            .user-avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+        }
+
+
+
+         /* Estilos para el modal */
+         .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background-color: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid #e0e0e0;
+            color: #333;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="nav-panel">
+        <div class="nav-logo">Hospital Admin</div>
+        <div class="nav-container">
+            <div class="nav-item active">
+                <span class="nav-icon">👤</span>
+                Usuarios
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">🏥</span>
+                Departamentos
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="container">
+            <div class="header">
+                <h1>Creación de Usuarios</h1>
+                <div class="search-box">
+                    <input type="text" placeholder="Buscar usuario..." id="searchInput">
+                    <button>Buscar</button>
+                </div>
+            </div>
+            
+            <div class="add-user-card">
+                <div class="card-title">Agregar Nuevo Usuario</div>
+                <form id="addUserForm" method="POST" action="{% url 'creacionuser' %}">
+                    {% csrf_token %}
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="firstName">Nombre</label>
+                            <input type="text" id="firstName" name="nombre" class="form-input" placeholder="Ej: Ana" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="lastName">Apellido</label>
+                            <input type="text" id="lastName" name="apellido" class="form-input" placeholder="Ej: García" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="idNumber">Cédula</label>
+                            <input type="text" id="idNumber" name="cedula" class="form-input" placeholder="Ej: 12345678"  maxlength="11" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="email">Correo Electrónico</label>
+                            <input type="email" id="email" name="correo_electronico" class="form-input" placeholder="Ej: ana.garcia@ejemplo.com" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="username">Nombre de Usuario</label>
+                            <input type="text" id="username" name="nombre_usuario" class="form-input" placeholder="Ej: agarcia" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="password">Contraseña</label>
+                            <input type="password" id="password" name="contrasena" class="form-input" placeholder="Ingrese una contraseña segura" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="department">Departamento</label>
+                            <select id="department" name="departamento" class="form-select" required>
+                                <option value="">Seleccione un departamento</option>
+                                {% for dept in departamentos %}
+                                <option value="{{ dept.id }}">{{ dept.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="role">Cargo</label>
+                            <select id="role" name="cargo" class="form-select" required>
+                                <option value="doctor">Doctor/a</option>
+                                <option value="nurse">Enfermero/a</option>
+                                <option value="admin">Administrativo/a</option>
+                                <option value="technician">Técnico/a</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="display: flex; justify-content: flex-end;">
+                            <button type="submit" class="btn btn-primary">Agregar Usuario</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="users-table">
+                <div class="table-container">
+                    <div class="table-header">
+                        <div>Avatar</div>
+                        <div>Nombre</div>
+                        <div>Cédula</div>
+                        <div>Email</div>
+                        <div>Usuario</div>
+                        <div>Contraseña</div>
+                        <div>Departamento</div>
+                        <div>Acciones</div>
+                    </div>
+                    
+                    <div id="usersContainer">
+                        {% for usuario in usuarios %}
+                        <div class="table-row" data-user-id="{{ usuario.id }}">
+                            <div>
+                                <div class="user-avatar">{{ usuario.nombre|first|upper }}{{ usuario.apellido|first|upper }}</div>
+                            </div>
+                            <div>
+                                <div class="user-name">{{ usuario.nombre }} {{ usuario.apellido }}</div>
+                                <div class="user-role">
+                                    {% if usuario.cargo == 'doctor' %}Doctor/a
+                                    {% elif usuario.cargo == 'nurse' %}Enfermero/a
+                                    {% elif usuario.cargo == 'admin' %}Administrativo/a
+                                    {% elif usuario.cargo == 'technician' %}Técnico/a
+                                    {% else %}{{ usuario.cargo }}{% endif %}
+                                </div>
+                            </div>
+                            <div class="user-id">{{ usuario.cedula }}</div>
+                            <div class="user-email">{{ usuario.correo_electronico }}</div>
+                            <div class="user-username">{{ usuario.nombre_usuario }}</div>
+                            <div class="user-password">********</div>
+                            <div>
+                                <span class="user-dept" style="background-color: 
+                                    {% if usuario.departamento.nombre == 'Cirugía' %}#3b82f6
+                                    {% elif usuario.departamento.nombre == 'Pediatría' %}#f97316
+                                    {% elif usuario.departamento.nombre == 'Cardiología' %}#ef4444
+                                    {% elif usuario.departamento.nombre == 'Medicina Interna' %}#8b5cf6
+                                    {% else %}#9ca3af{% endif %};">
+                                    {{ usuario.departamento.nombre }}
+                                </span>
+                            </div>
+                            <div class="action-buttons">
+                                <button class="edit-btn" onclick="openEditModal({{ usuario.id }})">✏️</button>
+                                <button class="delete-btn" onclick="deleteUser({{ usuario.id }})">🗑️</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+          <!-- Modal para editar usuario -->
+<div id="editModal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title">Editar Usuario</div>
+            <button class="close-btn" onclick="closeEditModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editUserForm">
+                <input type="hidden" id="editUserId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="editNombre">Nombre</label>
+                        <input type="text" id="editNombre" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="editApellido">Apellido</label>
+                        <input type="text" id="editApellido" class="form-input" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="editCedula">Cédula</label>
+                        <input type="text" id="editCedula" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="editEmail">Correo Electrónico</label>
+                        <input type="email" id="editEmail" class="form-input" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="editUsername">Nombre de Usuario</label>
+                        <input type="text" id="editUsername" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="editDepartamento">Departamento</label>
+                        <select id="editDepartamento" class="form-select" required>
+                            <option value="">Seleccione un departamento</option>
+                            {% for dept in departamentos %}
+                            <option value="{{ dept.id }}">{{ dept.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="editCargo">Cargo</label>
+                        <select id="editCargo" class="form-select" required>
+                            <option value="doctor">Doctor/a</option>
+                            <option value="nurse">Enfermero/a</option>
+                            <option value="admin">Administrativo/a</option>
+                            <option value="technician">Técnico/a</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="editPassword">Nueva Contraseña (opcional)</label>
+                        <input type="password" id="editPassword" class="form-input" placeholder="Dejar en blanco para no cambiar">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="editConfirmPassword">Confirmar Nueva Contraseña</label>
+                        <input type="password" id="editConfirmPassword" class="form-input" placeholder="Repita la contraseña si desea cambiarla">
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeEditModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveUserChanges()">Guardar</button>
+        </div>
+    </div>
+</div>
+    <script>
+ // Datos iniciales
+const departamentos = JSON.parse('{{ departamentos_json|escapejs }}');
+let users = [];
+
+// ======================
+// FUNCIONES AUXILIARES
+// ======================
+
+function showToast(message, isError = false) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${isError ? 'error' : ''} show`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+function getDepartmentColor(deptName) {
+    const colors = {
+        'Cirugía': '#3b82f6',
+        'Pediatría': '#f97316',
+        'Cardiología': '#ef4444',
+        'Medicina Interna': '#8b5cf6'
+    };
+    return colors[deptName] || '#9ca3af';
+}
+
+function getRoleName(roleId) {
+    const roles = {
+        'doctor': 'Doctor/a',
+        'nurse': 'Enfermero/a',
+        'admin': 'Administrativo/a',
+        'technician': 'Técnico/a'
+    };
+    return roles[roleId] || 'Otro';
+}
+
+function validateForm() {
+    const requiredFields = ['firstName', 'lastName', 'idNumber', 'email', 'username', 'password', 'department', 'role'];
+    let isValid = true;
+    
+    requiredFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (!field.value.trim()) {
+            field.style.borderColor = '#ef4444';
+            isValid = false;
+        } else {
+            field.style.borderColor = '#e0e0e0';
+        }
+    });
+    
+    if (!isValid) {
+        showToast('Por favor complete todos los campos requeridos', true);
+    }
+    
+    return isValid;
+}
+
+// ======================
+// FUNCIONES PRINCIPALES
+// ======================
+
+function loadDepartments() {
+    const select = document.getElementById('department');
+    select.innerHTML = '<option value="">Seleccione un departamento</option>';
+    
+    departamentos.forEach(dept => {
+        const option = document.createElement('option');
+        option.value = dept.id;
+        option.textContent = dept.nombre;
+        select.appendChild(option);
+    });
+}
+
+function renderUsers() {
+    const usersContainer = document.getElementById('usersContainer');
+    usersContainer.innerHTML = '';
+    
+    users.forEach(user => {
+        const userDept = departamentos.find(d => d.id == user.department);
+        const deptStyle = `background-color: ${getDepartmentColor(userDept?.nombre || '')}`;
+        
+        const row = document.createElement('div');
+        row.className = 'table-row';
+        row.dataset.userId = user.id;
+        row.innerHTML = `
+            <div><div class="user-avatar">${user.nombre?.charAt(0) || ''}${user.apellido?.charAt(0) || ''}</div></div>
+            <div>
+                <div class="user-name">${user.nombre} ${user.apellido}</div>
+                <div class="user-role">${getRoleName(user.cargo)}</div>
+            </div>
+            <div class="user-id">${user.cedula}</div>
+            <div class="user-email">${user.correo_electronico}</div>
+            <div class="user-username">${user.nombre_usuario}</div>
+            <div class="user-password">********</div>
+            <div><span class="user-dept" style="${deptStyle}">${userDept?.nombre || 'Sin asignar'}</span></div>
+            <div class="action-buttons">
+                <button class="edit-btn">✏️</button>
+                <button class="delete-btn">🗑️</button>
+            </div>
+        `;
+        usersContainer.appendChild(row);
+    });
+}
+
+// ======================
+// OPERACIONES CRUD
+// ======================
+
+async function deleteUser(userId) {
+    if (!confirm('¿Está seguro que desea eliminar este usuario?')) return;
+
+    const btn = document.querySelector(`.table-row[data-user-id="${userId}"] .delete-btn`);
+    const originalHtml = btn?.innerHTML;
+    if (btn) {
+        btn.innerHTML = '<div class="spinner"></div>';
+        btn.disabled = true;
+    }
+
+    try {
+        const response = await fetch(`/delete_user/${userId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            }
+        });
+
+        // Verificar si la respuesta es JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            throw new Error(`El servidor respondió con: ${text.substring(0, 100)}...`);
+        }
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || `Error ${response.status}`);
+        }
+
+        if (data.success) {
+            const row = document.querySelector(`.table-row[data-user-id="${userId}"]`);
+            if (row) {
+                row.style.transition = 'opacity 0.3s ease';
+                row.style.opacity = '0';
+                setTimeout(() => row.remove(), 300);
+            }
+            showToast(data.message || 'Usuario eliminado correctamente');
+        } else {
+            throw new Error(data.error || 'Error al eliminar');
+        }
+    } catch (error) {
+        console.error('Error eliminando usuario:', error);
+        showToast(error.message || 'Error al eliminar usuario', true);
+    } finally {
+        if (btn) {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
+    }
+}
+
+// ======================
+// FUNCIONES DEL MODAL
+// ======================
+
+function openEditModal(userId) {
+    const row = document.querySelector(`.table-row[data-user-id="${userId}"]`);
+    if (!row) {
+        showToast('Usuario no encontrado', true);
+        return;
+    }
+
+    // Llenar formulario con datos del usuario
+    document.getElementById('editUserId').value = userId;
+    
+    // Nombre y apellido
+    const fullName = row.querySelector('.user-name').textContent.split(' ');
+    document.getElementById('editNombre').value = fullName[0];
+    document.getElementById('editApellido').value = fullName.slice(1).join(' ');
+    
+    // Cédula
+    document.getElementById('editCedula').value = row.querySelector('.user-id').textContent;
+    
+    // Email
+    document.getElementById('editEmail').value = row.querySelector('.user-email').textContent;
+    
+    // Nombre de usuario
+    document.getElementById('editUsername').value = row.querySelector('.user-username').textContent;
+    
+    // Departamento
+    const deptName = row.querySelector('.user-dept').textContent.trim();
+    const deptSelect = document.getElementById('editDepartamento');
+    for (let i = 0; i < deptSelect.options.length; i++) {
+        if (deptSelect.options[i].text === deptName) {
+            deptSelect.value = deptSelect.options[i].value;
+            break;
+        }
+    }
+    
+    // Cargo
+    const roleText = row.querySelector('.user-role').textContent.trim();
+    const roleMap = {
+        'Doctor/a': 'doctor',
+        'Enfermero/a': 'nurse',
+        'Administrativo/a': 'admin',
+        'Técnico/a': 'technician'
+    };
+    document.getElementById('editCargo').value = roleMap[roleText] || 'doctor';
+    
+    // Resetear campo de contraseña
+    document.getElementById('editPassword').value = '';
+    document.getElementById('editConfirmPassword').value = '';
+    
+    // Mostrar modal
+    document.getElementById('editModal').classList.add('show');
+}
+
+// Función para cerrar el modal - ¡ESTA ES LA FUNCIÓN QUE FALTABA!
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('show');
+}
+
+async function saveUserChanges() {
+    const userId = document.getElementById('editUserId').value;
+    const password = document.getElementById('editPassword').value;
+    const confirmPassword = document.getElementById('editConfirmPassword').value;
+    
+    const formData = {
+        id: userId,
+        nombre: document.getElementById('editNombre').value.trim(),
+        apellido: document.getElementById('editApellido').value.trim(),
+        cedula: document.getElementById('editCedula').value.trim(),
+        correo_electronico: document.getElementById('editEmail').value.trim(),
+        nombre_usuario: document.getElementById('editUsername').value.trim(),
+        departamento: document.getElementById('editDepartamento').value,
+        cargo: document.getElementById('editCargo').value
+    };
+
+    // Validación básica
+    if (!formData.nombre || !formData.apellido || !formData.cedula || 
+        !formData.correo_electronico || !formData.nombre_usuario) {
+        showToast('Por favor complete todos los campos requeridos', true);
+        return;
+    }
+    
+    // Validar contraseña si se proporcionó
+    if (password || confirmPassword) {
+        if (password !== confirmPassword) {
+            showToast('Las contraseñas no coinciden', true);
+            return;
+        }
+        if (password.length < 8) {
+            showToast('La contraseña debe tener al menos 8 caracteres', true);
+            return;
+        }
+        formData.contrasena = password;
+    }
+
+    // Mostrar indicador de carga
+    const saveBtn = document.querySelector('#editModal .btn-primary');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = 'Guardando...';
+    saveBtn.disabled = true;
+
+    try {
+        const response = await fetch(`/update_user/${userId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+
+        // Verificar si la respuesta es JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            throw new Error(`El servidor respondió con: ${text.substring(0, 100)}...`);
+        }
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || `Error ${response.status}`);
+        }
+
+        if (data.success) {
+            showToast('Usuario actualizado correctamente');
+            closeEditModal(); // Aquí se llama a la función
+            // Recargar la página para ver los cambios
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            throw new Error(data.error || 'Error al actualizar el usuario');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast(error.message || 'Error al actualizar el usuario', true);
+    } finally {
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    }
+}
+
+// ======================
+// CONFIGURACIÓN DE EVENTOS
+// ======================
+
+function setupModalEvents() {
+    // Botón de cerrar en el modal
+    document.querySelector('.close-btn').addEventListener('click', closeEditModal);
+    
+    // Cerrar modal haciendo clic fuera del contenido
+    document.getElementById('editModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeEditModal();
+        }
+    });
+    
+    // Cerrar con tecla ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('editModal').classList.contains('show')) {
+            closeEditModal();
+        }
+    });
+}
+
+// Inicialización
+document.addEventListener('DOMContentLoaded', function() {
+    setupModalEvents();
+    // ... otras inicializaciones
+});
+// ======================
+// EVENT LISTENERS
+// ======================
+
+function setupEventListeners() {
+    // Delegación de eventos para botones dinámicos
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-btn')) {
+            const userId = e.target.closest('.table-row').dataset.userId;
+            deleteUser(userId);
+        }
+        
+        if (e.target.classList.contains('edit-btn')) {
+            const userId = e.target.closest('.table-row').dataset.userId;
+            openEditModal(userId);
+        }
+    });
+
+    // Formulario principal
+    document.getElementById('addUserForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (validateForm()) this.submit();
+    });
+
+    // Scroll de tabla
+    const table = document.querySelector('.users-table');
+    if (table) {
+        table.addEventListener('scroll', function() {
+            this.classList.toggle('scrolling', this.scrollLeft > 0);
+        });
+    }
+}
+
+// ======================
+// INICIALIZACIÓN
+// ======================
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadDepartments();
+    renderUsers();
+    setupEventListeners();
+});
+    </script>
+</body>
+</html>

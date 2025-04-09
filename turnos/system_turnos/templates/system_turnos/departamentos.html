@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestión de Departamentos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            touch-action: manipulation;
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Panel de navegación vertical */
+        .nav-panel {
+            background-color: #3b82f6;
+            color: white;
+            width: 250px;
+            min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        
+        .nav-logo {
+            padding: 20px;
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-container {
+            display: flex;
+            flex-direction: column;
+            padding: 15px 0;
+        }
+
+        .nav-container a {
+            color: #ffffff;
+            text-decoration: none;
+        }
+        
+        .nav-item {
+            padding: 15px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .nav-item:active {
+            background-color: #2563eb;
+        }
+        
+        .nav-item.active {
+            background-color: #2563eb;
+        }
+        
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background-color: white;
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+        
+        /* Botón para mostrar/ocultar navegación en móviles */
+        .nav-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 200;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 8px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Contenido principal */
+        .main-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        h1 {
+            font-size: 28px;
+            color: #333;
+        }
+        
+        /* Buscador */
+        .search-box {
+            display: flex;
+            background-color: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .search-box input {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            outline: none;
+            font-size: 16px;
+        }
+        
+        .search-box button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        /* Tarjeta para agregar departamento */
+        .add-dept-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus {
+            border-color: #3b82f6;
+            outline: none;
+        }
+        
+        /* Tabla de departamentos (modificada - sin columna de icono) */
+        .departments-table {
+            width: 100%;
+            background-color: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .table-header {
+            background-color: #f8fafc;
+            padding: 15px 20px;
+            font-weight: bold;
+            display: grid;
+            grid-template-columns: 1fr 1fr 120px; /* Eliminada la columna de icono */
+            gap: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .table-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 120px; /* Eliminada la columna de icono */
+            gap: 15px;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            align-items: center;
+        }
+        
+        .table-row:last-child {
+            border-bottom: none;
+        }
+        
+        .table-row:active {
+            background-color: #f8fafc;
+        }
+        
+        .dept-name {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .dept-reference {
+            color: #666;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .edit-btn, .delete-btn {
+            border: none;
+            border-radius: 6px;
+            padding: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+        }
+        
+        .edit-btn {
+            background-color: #f0f7ff;
+            color: #3b82f6;
+        }
+        
+        .delete-btn {
+            background-color: #fee2e2;
+            color: #ef4444;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+        }
+        
+        .btn-primary:hover, .btn-primary:active {
+            background-color: #2563eb;
+        }
+        
+        .btn-outline {
+            background-color: white;
+            border: 2px solid #e0e0e0;
+            color: #666;
+        }
+        
+        .btn-outline:hover, .btn-outline:active {
+            border-color: #d1d5db;
+            background-color: #f9fafb;
+        }
+        
+        /* Modal de confirmación */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .modal {
+            background-color: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .modal-body {
+            margin-bottom: 25px;
+            color: #555;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+        
+        /* Estilos para pantallas pequeñas */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            
+            .nav-panel {
+                position: fixed;
+                width: 250px;
+                transform: translateX(-100%);
+                min-height: 100vh;
+                height: 100%;
+            }
+            
+            .nav-panel.show {
+                transform: translateX(0);
+            }
+            
+            .nav-toggle {
+                display: block;
+            }
+            
+            .main-content {
+                margin-top: 60px;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .search-box {
+                max-width: 100%;
+            }
+        }
+        
+        /* Overlay para cerrar menú en móviles */
+        .nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 90;
+            display: none;
+        }
+        
+        .nav-overlay.show {
+            display: block;
+        }
+        
+        /* Toast de notificación */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4ade80;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .toast.show {
+            opacity: 1;
+        }
+        
+        .toast.error {
+            background-color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <!-- Botón para mostrar/ocultar navegación en móviles -->
+    <button class="nav-toggle" id="navToggle">☰</button>
+    
+    <!-- Overlay para cerrar menú en móviles -->
+    <div class="nav-overlay" id="navOverlay"></div>
+    
+    <!-- Panel de navegación vertical -->
+    <div class="nav-panel" id="navPanel">
+        <div class="nav-logo">Hospital Admin</div>
+        <div class="nav-container">
+            <div class="nav-item">
+                <span class="nav-icon">👤</span>
+                <a href="{% url 'creacionuser' %}">Usuarios</a> 
+            </div>
+            <div class="nav-item active">
+                <span class="nav-icon">🏥</span>
+               <a href="{% url 'departamentos' %}">Departamentos</a> 
+            </div>
+            <div class="nav-item active">
+                <span class="nav-icon">👥</span>
+               <a href="{% url 'clientes' %}">Clientes</a> 
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">🔄</span>
+               <a href="{% url 'asignaciondp'%}">Asignaciones</a> 
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">📊</span>
+                Reportes
+            </div>
+            <div class="nav-item">
+                <span class="nav-icon">⚙️</span>
+                Configuración
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contenido principal -->
+    <div class="main-content">
+        <div class="container">
+            <div class="header">
+                <h1>Gestión de Departamentos</h1>
+                <div class="search-box">
+                    <input type="text" placeholder="Buscar departamento..." id="searchInput">
+                    <button>Buscar</button>
+                </div>
+            </div>
+            
+            <!-- Formulario para agregar departamento -->
+            <div class="add-dept-card">
+                <div class="card-title">Agregar Nuevo Departamento</div>
+                <form id="addDeptForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="deptName">Nombre del Departamento</label>
+                            <input type="text" id="deptName" name="nombre" class="form-input" placeholder="Ej: Neurología" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="deptReference">Referencia</label>
+                            <input type="text" id="deptReference" name="descripcion" class="form-input" placeholder="Ej: Edificio A, Piso 2">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="display: flex; align-items: flex-end;">
+                            <button type="submit" class="btn btn-primary">Agregar Departamento</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Tabla de departamentos (sin columna de icono) -->
+            <div class="departments-table">
+                <div class="table-header">
+                    <div>Nombre</div>
+                    <div>Referencia</div>
+                    <div>Acciones</div>
+                </div>
+                
+                <div id="deptsContainer">
+                    <!-- Los departamentos aparecerán aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de confirmación para eliminar -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Confirmar Eliminación</div>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                ¿Está seguro que desea eliminar el departamento <strong id="deleteDeptName"></strong>? Esta acción no se puede deshacer.
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="cancelDelete">Cancelar</button>
+                <button class="btn btn-primary" id="confirmDelete" style="background-color: #ef4444;">Eliminar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para editar departamento -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Editar Departamento</div>
+                <button class="close-btn" id="closeEditModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editDeptForm">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label class="form-label" for="editDeptName">Nombre del Departamento</label>
+                        <input type="text" id="editDeptName" class="form-input" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label class="form-label" for="editDeptReference">Referencia</label>
+                        <input type="text" id="editDeptReference" class="form-input" placeholder="Ej: Edificio A, Piso 2">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="cancelEdit">Cancelar</button>
+                <button class="btn btn-primary" id="saveEdit">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast de notificación -->
+    <div class="toast" id="toast">Departamento agregado correctamente</div>
+    
+    <script>
+        // Elementos DOM
+        const elements = {
+            deptsContainer: document.getElementById('deptsContainer'),
+            addDeptForm: document.getElementById('addDeptForm'),
+            deptName: document.getElementById('deptName'),
+            deptReference: document.getElementById('deptReference'),
+            searchInput: document.getElementById('searchInput'),
+            deleteModal: document.getElementById('deleteModal'),
+            closeModal: document.getElementById('closeModal'),
+            cancelDelete: document.getElementById('cancelDelete'),
+            confirmDelete: document.getElementById('confirmDelete'),
+            deleteDeptName: document.getElementById('deleteDeptName'),
+            editModal: document.getElementById('editModal'),
+            closeEditModal: document.getElementById('closeEditModal'),
+            cancelEdit: document.getElementById('cancelEdit'),
+            saveEdit: document.getElementById('saveEdit'),
+            editDeptName: document.getElementById('editDeptName'),
+            editDeptReference: document.getElementById('editDeptReference'),
+            toast: document.getElementById('toast'),
+            navToggle: document.getElementById('navToggle'),
+            navPanel: document.getElementById('navPanel'),
+            navOverlay: document.getElementById('navOverlay')
+        };
+    
+        // Datos iniciales desde Django
+        let departments = JSON.parse('{{ departamentos_json|escapejs }}');
+        let currentDeptId = null;
+    
+        // Función para hacer peticiones al servidor
+        async function sendRequest(data) {
+            try {
+                const response = await fetch('{% url "departamentos" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify(data)
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                return { success: false, error: 'Error de conexión' };
+            }
+        }
+    
+        // Función para mostrar notificación
+        function showToast(message, isError = false) {
+            elements.toast.textContent = message;
+            elements.toast.className = isError ? 'toast error show' : 'toast show';
+            setTimeout(() => elements.toast.className = 'toast', 3000);
+        }
+    
+        // Función para renderizar los departamentos
+        function renderDepartments(depts = departments) {
+            elements.deptsContainer.innerHTML = '';
+            
+            if (depts.length === 0) {
+                elements.deptsContainer.innerHTML = `
+                    <div class="table-row" style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #666;">
+                        No hay departamentos registrados
+                    </div>
+                `;
+                return;
+            }
+            
+            depts.forEach(dept => {
+                const row = document.createElement('div');
+                row.className = 'table-row';
+                
+                row.innerHTML = `
+                    <div class="dept-name">${dept.nombre}</div>
+                    <div class="dept-reference">${dept.descripcion || 'No especificada'}</div>
+                    <div class="action-buttons">
+                        <button class="edit-btn" data-dept-id="${dept.id}" title="Editar">
+                            ✏️
+                        </button>
+                        <button class="delete-btn" data-dept-id="${dept.id}" title="Eliminar">
+                            🗑️
+                        </button>
+                    </div>
+                `;
+                
+                elements.deptsContainer.appendChild(row);
+            });
+            
+            // Agregar eventos a los botones
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    currentDeptId = this.getAttribute('data-dept-id');
+                    const dept = departments.find(d => d.id == currentDeptId);
+                    if (dept) {
+                        elements.deleteDeptName.textContent = dept.nombre;
+                        elements.deleteModal.classList.add('show');
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    currentDeptId = this.getAttribute('data-dept-id');
+                    const dept = departments.find(d => d.id == currentDeptId);
+                    if (dept) {
+                        elements.editDeptName.value = dept.nombre;
+                        elements.editDeptReference.value = dept.referencia || '';
+                        elements.editModal.classList.add('show');
+                    }
+                });
+            });
+        }
+    
+        // Funciones para manejar modales
+        function closeDeleteModal() {
+            elements.deleteModal.classList.remove('show');
+            currentDeptId = null;
+        }
+    
+        function closeEditModal() {
+            elements.editModal.classList.remove('show');
+            currentDeptId = null;
+        }
+    
+        // Función para eliminar departamento
+        async function deleteDepartment() {
+            if (currentDeptId) {
+                const response = await sendRequest({
+                    action: 'delete',
+                    id: currentDeptId
+                });
+                
+                if (response.success) {
+                    window.location.reload(); // Recargar la página
+                } else {
+                    showToast('Error: ' + response.error, true);
+                }
+            }
+        }
+    
+        // Función para guardar cambios
+        async function saveDepartmentChanges() {
+            if (currentDeptId) {
+                const response = await sendRequest({
+                    action: 'update',
+                    id: currentDeptId,
+                    nombre: elements.editDeptName.value.trim(),
+                    descripcion: elements.editDeptReference.value.trim(),
+                    encargado: '' 
+                });
+                
+                if (response.success) {
+                    window.location.reload(); // Recargar la página
+                } else {
+                    showToast('Error: ' + response.error, true);
+                }
+            }
+        }
+    
+        // Evento para agregar departamento
+        elements.addDeptForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const nombre = elements.deptName.value.trim();
+            const descripcion = elements.deptReference.value.trim();
+            
+            if (!nombre) {
+                showToast('El nombre del departamento es requerido', true);
+                return;
+            }
+            
+            const response = await sendRequest({
+                action: 'create',
+                nombre: nombre,
+                descripcion:  descripcion,
+                encargado: ''  
+            });
+            
+            if (response.success) {
+                window.location.reload(); // Recargar la página
+            } else {
+                showToast('Error: ' + response.error, true);
+            }
+        });
+    
+        // Eventos para los modales
+        elements.closeModal.addEventListener('click', closeDeleteModal);
+        elements.cancelDelete.addEventListener('click', closeDeleteModal);
+        elements.confirmDelete.addEventListener('click', deleteDepartment);
+        
+        elements.closeEditModal.addEventListener('click', closeEditModal);
+        elements.cancelEdit.addEventListener('click', closeEditModal);
+        elements.saveEdit.addEventListener('click', saveDepartmentChanges);
+    
+        // Evento para búsqueda
+        elements.searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            if (!query) {
+                renderDepartments();
+                return;
+            }
+            
+            const filtered = departments.filter(dept => 
+                dept.nombre.toLowerCase().includes(query) || 
+                (dept.descripcion && dept.descripcion.toLowerCase().includes(query))
+            );
+            renderDepartments(filtered);
+        });
+    
+        // Eventos para el menú móvil
+        elements.navToggle.addEventListener('click', function() {
+            elements.navPanel.classList.toggle('show');
+            elements.navOverlay.classList.toggle('show');
+        });
+        
+        elements.navOverlay.addEventListener('click', function() {
+            elements.navPanel.classList.remove('show');
+            this.classList.remove('show');
+        });
+    
+        // Inicialización
+        renderDepartments();
+    </script>
+</body>
+</html>

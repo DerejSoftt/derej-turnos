@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Visualización Completa de Turnos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            touch-action: manipulation;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* Encabezado */
+        .header {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo i {
+            font-size: 22px;
+        }
+        
+        /* Contenido principal */
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 25px auto;
+            padding: 0 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .page-title {
+            font-size: 28px;
+            color: #1e3a8a;
+            margin-bottom: 25px;
+            text-align: center;
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 10px;
+        }
+        
+        .page-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 2px;
+        }
+        
+        /* Lista de turnos */
+        .appointments-list {
+            background-color: white;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+            width: 100%;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .list-header {
+            background-color: #f8fafc;
+            padding: 18px 25px;
+            font-weight: 600;
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr 1fr;
+            gap: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 16px;
+            color: #475569;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .list-item {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr 1fr;
+            gap: 20px;
+            padding: 18px 25px;
+            border-bottom: 1px solid #f1f5f9;
+            align-items: center;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .list-item:last-child {
+            border-bottom: none;
+        }
+        
+        .list-item:hover {
+            background-color: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .list-ticket-container {
+            display: flex;
+            justify-content: center;
+        }
+        
+        .list-ticket {
+            font-weight: bold;
+            color: #1e3a8a;
+            font-size: 22px;
+            background-color: #dbeafe;
+            padding: 12px 16px;
+            border-radius: 10px;
+            display: inline-block;
+            text-align: center;
+            min-width: 80px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .list-consultorio-container {
+            display: flex;
+            justify-content: center;
+        }
+        
+        .list-consultorio {
+            font-weight: 600;
+            color: #047857;
+            font-size: 18px;
+            text-align: center;
+            background-color: #ecfdf5;
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: inline-block;
+            min-width: 160px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .list-dept-container {
+            display: flex;
+            justify-content: center;
+        }
+        
+        .list-dept {
+            color: #3b82f6;
+            font-weight: 600;
+            font-size: 18px;
+            text-align: center;
+            background-color: #eff6ff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: inline-block;
+            min-width: 120px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .list-status-container {
+            display: flex;
+            justify-content: center;
+        }
+        
+        .list-status {
+            font-weight: 600;
+            font-size: 16px;
+            text-align: center;
+            padding: 10px 15px;
+            border-radius: 50px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 120px;
+            justify-content: center;
+        }
+        
+        /* Estilos para estados */
+        .status-pending {
+            background-color: #fef3c7;
+            color: #b45309;
+        }
+        
+        .status-completed {
+            background-color: #ecfdf5;
+            color: #047857;
+        }
+        
+        .status-cancelled {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        
+        /* Scrollbar personalizada */
+        .appointments-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .appointments-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 0 14px 14px 0;
+        }
+        
+        .appointments-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        .appointments-list::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Estilos para pantallas medianas */
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 24px;
+            }
+            
+            .list-header {
+                padding: 16px 20px;
+                font-size: 14px;
+                grid-template-columns: 1fr 1.5fr 1fr 1fr;
+            }
+            
+            .list-item {
+                padding: 16px 20px;
+                grid-template-columns: 1fr 1.5fr 1fr 1fr;
+            }
+            
+            .list-ticket {
+                font-size: 18px;
+                min-width: 70px;
+                padding: 10px 12px;
+            }
+            
+            .list-consultorio {
+                font-size: 16px;
+                padding: 8px 12px;
+                min-width: 140px;
+            }
+            
+            .list-dept {
+                font-size: 16px;
+                min-width: 100px;
+            }
+            
+            .list-status {
+                font-size: 14px;
+                padding: 8px 12px;
+                min-width: 100px;
+            }
+        }
+        
+        /* Estilos para pantallas pequeñas */
+        @media (max-width: 600px) {
+            .container {
+                padding: 0 15px;
+            }
+            
+            .page-title {
+                font-size: 22px;
+                margin-bottom: 20px;
+            }
+            
+            .list-header {
+                display: none;
+            }
+            
+            .list-item {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                padding: 20px;
+                position: relative;
+            }
+            
+            .list-item::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 20px;
+                right: 20px;
+                height: 1px;
+                background-color: #e2e8f0;
+            }
+            
+            .list-ticket, .list-consultorio, .list-dept, .list-status {
+                margin: 0 auto;
+                width: 100%;
+                max-width: 250px;
+            }
+            
+            .list-status {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Encabezado -->
+    <div class="header">
+        <div class="logo">
+            <i class="fas fa-hospital-alt"></i>
+            <span>Visualización Completa de Turnos</span>
+        </div>
+    </div>
+    
+    <!-- Contenido principal -->
+    <div class="container">
+        <h1 class="page-title">Todos los Turnos</h1>
+        
+        <!-- Lista de turnos con scroll -->
+        <div class="appointments-list">
+            <div class="list-header">
+                <div>Ticket</div>
+                <div>Consultorio</div>
+                <div>Departamento</div>
+                <div>Estado</div>
+            </div>
+            
+            {% for turno in turnos %}
+            <div class="list-item">
+                <div class="list-ticket-container">
+                    <span class="list-ticket">{{ turno.numerodeticker }}</span>
+                </div>
+                <div class="list-consultorio-container">
+                    <span class="list-consultorio">Consultorio {{ turno.departamento.consultorio|default:"N/A" }}</span>
+                </div>
+                <div class="list-dept-container">
+                    <span class="list-dept">{{ turno.departamento.nombre }}</span>
+                </div>
+                <div class="list-status-container">
+                    <span class="list-status 
+                        {% if turno.estado == 'pendiente' %}status-pending
+                        {% elif turno.estado == 'atendido' %}status-completed
+                        {% else %}status-cancelled{% endif %}">
+                        <i class="fas 
+                            {% if turno.estado == 'pendiente' %}fa-hourglass-half
+                            {% elif turno.estado == 'atendido' %}fa-check-circle
+                            {% else %}fa-times-circle{% endif %}"></i>
+                        {{ turno.get_estado_display }}
+                    </span>
+                </div>
+            </div>
+            {% empty %}
+            <div class="list-item" style="text-align: center; padding: 30px; color: #64748b;">
+                No hay turnos registrados
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <script>
+        const socket = new WebSocket(`wss://${window.location.host}/ws/turnos/`);
+        
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            if(data.type === 'turno_update') {
+                // Actualiza solo el turno específico (mejor que recargar todo)
+                const nuevoTurno = data.data;
+                const turnoHtml = `
+                    <div class="list-item">
+                        <div>${nuevoTurno.numerodeticker}</div>
+                        <!-- ... otros campos ... -->
+                    </div>`;
+                document.querySelector('.appointments-list').insertAdjacentHTML('afterbegin', turnoHtml);
+            }
+        };
+        
+        // Reconexión automática cada 5 segundos si falla
+        socket.onclose = function() {
+            setTimeout(() => window.location.reload(), 5000);
+        };
+        </script>
+</body>
+</html>

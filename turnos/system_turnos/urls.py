@@ -1,0 +1,24 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+     path("", views.index, name="index"),
+     path('inicio/<int:departamento_id>/', views.inicio, name='inicio'),
+     # path("turnos", views.turnos, name="turnos"),
+     path("asignaciondp", views.asignaciondp, name="asignaciondp"),
+     path("clientes", views.clientes, name="clientes"),
+     path("departamentos", views.departamentos, name="departamentos"),
+     path("creacionuser", views.creacionuser, name="creacionuser"),
+     path("control", views.control, name="control"),
+     path("vistadeturnos", views.vistadeturnos, name="vistadeturnos"),
+     path("guardar_cliente", views.guardar_cliente, name="guardar_cliente"),
+     path('delete_user/<int:user_id>/', views.delete_user, name='delete_user'),
+     path('update_user/<int:user_id>/', views.update_user, name='update_user'),
+     path("reporte", views.reporte, name="reporte"),
+     path('verificar-cedula/', views.verificar_cedula, name='verificar_cedula'),
+     path('actualizar_estado/', views.actualizar_estado, name='actualizar_estado'),
+     path('obtener_turnos/', views.obtener_turnos, name='obtener_turnos'),
+     path('iniciosesion', views.iniciosesion, name='iniciosesion'),
+     path('logout/', views.logout_view, name='logout'),
+     #path('mi-departamento/', views.departamento_usuario, name='departamento_usuario'),
+]

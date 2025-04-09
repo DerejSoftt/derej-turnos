@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingreso de Cédula - {{ departamento.nombre }}</title>
+    <style>
+        /* Tus estilos CSS permanecen igual */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .form-container {
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .titulo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .titulo h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .titulo p {
+            color: #666;
+        }
+        
+        .selected-department {
+            font-weight: bold;
+            color: #4f46e5;
+            font-size: 20px;
+            margin: 15px 0;
+            text-align: center;
+            padding: 10px;
+            background-color: #f0f7ff;
+            border-radius: 8px;
+        }
+        
+        .formu {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .formu label {
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #444;
+        }
+        
+        .formu input {
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        .formu button {
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .formu button:hover {
+            background-color: #4338ca;
+        }
+
+        /* Modal de turno */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            animation: modalFadeIn 0.3s;
+        }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .modal h2 {
+            color: #4f46e5;
+            margin-bottom: 15px;
+        }
+        
+        .modal p {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .turno-numero {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4f46e5;
+            margin: 20px 0;
+            letter-spacing: 3px;
+        }
+        
+        .modal button {
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        /* Loader */
+        .loader-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4f46e5;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <div class="titulo">
+            <h1>Sistema de Turnos</h1>
+            <p>Ingrese su número de cédula para obtener un turno</p>
+            <div class="selected-department">
+                Departamento seleccionado: <strong>{{ departamento.nombre }}</strong>
+            </div>
+        </div>
+        
+        <div id="errorMessage" class="error-message"></div>
+        
+        <div class="formu">
+            <form id="cedulaForm" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="departamento_id" value="{{ departamento.id }}">
+                <label for="cedula">Número de Cédula</label>
+                <input type="text" id="cedula" name="cedula" placeholder="Ej: 4025533558" maxlength="11" required>
+                <button type="submit">Obtener Turno</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loader -->
+    <div class="loader-container" id="loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Modal para mostrar el turno -->
+    <div class="modal-overlay" id="turnoModal">
+        <div class="modal-content">
+            <h2>¡Turno Generado!</h2>
+            <p>Departamento:</p>
+            <p id="departamentoModal" style="font-weight: bold;"></p>
+            <p>Su número de turno es:</p>
+            <div class="turno-numero" id="numeroTurno"></div>
+            <p>Nombre: <span id="nombreCliente"></span></p>
+            <button onclick="cerrarModal()">Aceptar</button>
+        </div>
+    </div>
+
+    <script>
+       document.addEventListener('DOMContentLoaded', function() {
+            // Elementos del DOM
+            const cedulaForm = document.getElementById('cedulaForm');
+            const errorMessage = document.getElementById('errorMessage');
+            const loader = document.getElementById('loader');
+            const turnoModal = document.getElementById('turnoModal');
+            const numeroTurno = document.getElementById('numeroTurno');
+            const departamentoModal = document.getElementById('departamentoModal');
+            const nombreCliente = document.getElementById('nombreCliente');
+            const cedulaInput = document.getElementById('cedula');
+            let redireccionTimeout;
+
+            // Manejar el envío del formulario
+            cedulaForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Obtener datos del formulario
+                const formData = new FormData(cedulaForm);
+                const cedula = formData.get('cedula').trim();
+                const departamentoId = formData.get('departamento_id').trim();
+                
+                // Resetear mensajes de error
+                hideError();
+                
+                // Validación del lado del cliente
+                if (!cedula) {
+                    showError('Por favor ingrese su número de cédula');
+                    cedulaInput.focus();
+                    return;
+                }
+                
+                // Mostrar loader
+                showLoader(true);
+                
+                // Enviar datos al servidor
+                fetch("{% url 'verificar_cedula' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        // Si la respuesta no es OK, lanzar error con el status
+                        return response.json().then(err => {
+                            throw new Error(err.message || 'Error en la respuesta del servidor');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Mostrar turno en modal e imprimir automáticamente
+                        showTurnoModal(data.turno, data.departamento, data.nombre);
+                        
+                        // Limpiar formulario
+                        cedulaForm.reset();
+                    } else {
+                        // Mostrar error del servidor
+                        showError(data.message || 'Ocurrió un error al procesar su solicitud');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError(error.message || 'Ocurrió un error al comunicarse con el servidor');
+                })
+                .finally(() => {
+                    showLoader(false);
+                });
+            });
+
+            // Función para mostrar el modal de turno e imprimir automáticamente
+            function showTurnoModal(turno, departamento, nombre) {
+                // Primero imprimir el ticket
+                printTicket(turno, departamento, nombre);
+                
+                // Luego mostrar el modal con un pequeño retraso
+                setTimeout(() => {
+                    numeroTurno.textContent = turno;
+                    departamentoModal.textContent = departamento;
+                    nombreCliente.textContent = nombre;
+                    turnoModal.style.display = 'flex';
+                    
+                    // Configurar el temporizador para cerrar y redirigir después de 10 segundos
+                    clearTimeout(redireccionTimeout);
+                    redireccionTimeout = setTimeout(() => {
+                        cerrarModal();
+                        window.location.href = "{% url 'index' %}";
+                    }, 10000); // 10 segundos = 10000 milisegundos
+                }, 300);
+            }
+
+            // Función para cerrar el modal
+            window.cerrarModal = function() {
+                turnoModal.style.display = 'none';
+                clearTimeout(redireccionTimeout);
+            }
+
+            // Función para mostrar errores
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+                
+                // Ocultar el mensaje después de 5 segundos
+                setTimeout(hideError, 5000);
+            }
+
+            // Función para ocultar errores
+            function hideError() {
+                errorMessage.style.display = 'none';
+            }
+
+            // Función para mostrar/ocultar loader
+            function showLoader(show) {
+                loader.style.display = show ? 'flex' : 'none';
+            }
+
+            // Función para imprimir el ticket automáticamente
+            function printTicket(turno, departamento, nombre) {
+                // Crear un contenido HTML para el ticket
+                const contenido = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Ticket de Turno</title>
+                        <style>
+                            @page { size: auto; margin: 5mm; }
+                            body { 
+                                font-family: Arial, sans-serif;
+                                width: 80mm;
+                                margin: 0 auto;
+                                padding: 10px;
+                                text-align: center;
+                            }
+                            .header {
+                                font-weight: bold;
+                                font-size: 18px;
+                                margin-bottom: 10px;
+                            }
+                            .info {
+                                margin: 8px 0;
+                                font-size: 14px;
+                            }
+                            .turno {
+                                font-size: 28px;
+                                font-weight: bold;
+                                margin: 15px 0;
+                                color: #000;
+                            }
+                            .fecha {
+                                font-size: 12px;
+                                margin-top: 15px;
+                            }
+                            hr {
+                                border: 0;
+                                height: 1px;
+                                background: #333;
+                                margin: 10px 0;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">SISTEMA DE TURNOS</div>
+                        <hr>
+                        <div class="info"><strong>Departamento:</strong><br>${departamento}</div>
+                        <div class="info"><strong>Cliente:</strong><br>${nombre}</div>
+                        <div class="turno">${turno}</div>
+                        <hr>
+                        <div class="fecha">${new Date().toLocaleString()}</div>
+                    </body>
+                    </html>
+                `;
+                
+                // Abrir una ventana nueva para imprimir
+                const ventanaImpresion = window.open('', '_blank', 'width=300,height=400');
+                ventanaImpresion.document.write(contenido);
+                ventanaImpresion.document.close();
+                
+                // Esperar a que se cargue el contenido y luego imprimir
+                ventanaImpresion.onload = function() {
+                    setTimeout(() => {
+                        ventanaImpresion.print();
+                        // Cerrar la ventana después de imprimir (opcional)
+                        setTimeout(() => ventanaImpresion.close(), 100);
+                    }, 200);
+                };
+            }
+        });
+    </script>
+</body>
+</html>

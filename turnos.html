@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %} 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>turno</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'system_turnos/estilos.css' %}">
+</head>
+<body>
+    <div class="turnoscontent">
+        <div class="head">
+            <h3>Su turno es:</h3>
+        </div>
+       <div class="turnos">
+        <span>{{ turno }}</span>
+       </div>
+    </div>
+</body>
+</html>
