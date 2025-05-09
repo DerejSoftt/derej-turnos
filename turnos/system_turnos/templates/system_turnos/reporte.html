@@ -24,58 +24,127 @@
         .nav-panel {
             background-color: #3b82f6;
             color: white;
-            width: 250px;
+            width: 280px;
             min-height: 100vh;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
             position: sticky;
             top: 0;
             height: 100vh;
             z-index: 100;
-            transition: transform 0.3s ease;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
         }
-        
+
         .nav-logo {
             padding: 20px;
-            font-size: 22px;
-            font-weight: bold;
-            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 12px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
         }
-        
+
+        .logo-icon {
+            font-size: 24px;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: bold;
+            white-space: nowrap;
+            transition: opacity 0.3s ease;
+        }
+
         .nav-container {
             display: flex;
             flex-direction: column;
             padding: 15px 0;
+            flex-grow: 1;
         }
-        
+
         .nav-item {
-            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 500;
             cursor: pointer;
             position: relative;
-            transition: background-color 0.2s;
+            transition: all 0.2s ease;
+            color: white;
+            text-decoration: none;
+            gap: 12px;
         }
-        
+
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
         .nav-item:active {
-            background-color: #2563eb;
+            transform: scale(0.98);
+            background-color: rgba(255, 255, 255, 0.15);
         }
-        
+
         .nav-item.active {
-            background-color: #2563eb;
+            background-color: rgba(255, 255, 255, 0.2);
+            font-weight: 600;
         }
-        
-        .nav-item.active::before {
-            content: '';
+
+        .nav-item.active .nav-indicator {
+            opacity: 1;
+            transform: scaleY(1);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            width: 24px;
+            display: flex;
+            justify-content: center;
+            transition: transform 0.2s ease;
+        }
+
+        .nav-item:hover .nav-icon {
+            transform: scale(1.1);
+        }
+
+        .nav-text {
+            flex-grow: 1;
+            white-space: nowrap;
+            transition: opacity 0.3s ease;
+        }
+
+        .nav-indicator {
             position: absolute;
             left: 0;
             top: 0;
             height: 100%;
             width: 4px;
             background-color: white;
+            opacity: 0;
+            transform: scaleY(0.5);
+            transform-origin: center top;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
-        
-        /* Botón para mostrar/ocultar navegación en móviles */
+
+        /* Versión colapsada */
+        .nav-panel.collapsed {
+            width: 80px;
+        }
+
+        .nav-panel.collapsed .logo-text,
+        .nav-panel.collapsed .nav-text {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+        }
+
+        .nav-panel.collapsed .nav-item {
+            justify-content: center;
+            padding: 15px 0;
+        }
+
+        /* Botón para mostrar/ocultar navegación */
         .nav-toggle {
             display: none;
             position: fixed;
@@ -91,6 +160,28 @@
             font-size: 24px;
             cursor: pointer;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .nav-toggle:hover {
+            background-color: #2563eb;
+            transform: scale(1.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .nav-panel {
+                position: fixed;
+                transform: translateX(-100%);
+            }
+            
+            .nav-panel.open {
+                transform: translateX(0);
+            }
+            
+            .nav-toggle {
+                display: block;
+            }
         }
         
         /* Contenido principal */
@@ -413,14 +504,41 @@
     
     <!-- Panel de navegación vertical -->
     <div class="nav-panel" id="navPanel">
-        <div class="nav-logo">Hospital Admin</div>
+        <div class="nav-logo">
+            <span class="logo-icon">🏥</span>
+            <span class="logo-text">Hospital Admin</span>
+        </div>
         <div class="nav-container">
-            <div class="nav-item">Usuarios</div>
-            <div class="nav-item">Departamentos</div>
-            <div class="nav-item">Clientes</div>
-            <div class="nav-item">Asignaciones</div>
-            <div class="nav-item active">Reportes</div>
-            <div class="nav-item">Configuración</div>
+            <a href="{% url 'creacionuser' %}" class="nav-item {% if request.resolver_match.url_name == 'creacionuser' %}active{% endif %}">
+                <span class="nav-icon">👤</span>
+                <span class="nav-text">Usuarios</span>
+                <span class="nav-indicator"></span>
+            </a>
+            <a href="{% url 'departamentos' %}" class="nav-item {% if request.resolver_match.url_name == 'departamentos' %}active{% endif %}">
+                <span class="nav-icon">🏥</span>
+                <span class="nav-text">Departamentos</span>
+                <span class="nav-indicator"></span>
+            </a>
+            <a href="{% url 'clientes' %}" class="nav-item active">
+                <span class="nav-icon">👥</span>
+                <span class="nav-text">Clientes</span>
+                <span class="nav-indicator"></span>
+            </a>
+            <a href="{% url 'asignaciondp' %}" class="nav-item {% if request.resolver_match.url_name == 'asignaciondp' %}active{% endif %}">
+                <span class="nav-icon">🔄</span>
+                <span class="nav-text">Asignaciones</span>
+                <span class="nav-indicator"></span>
+            </a>
+            <a href="{% url 'reporte' %}" class="nav-item">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">Reportes</span>
+                <span class="nav-indicator"></span>
+            </a>
+            <a href="" class="nav-item">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-text">Configuración</span>
+                <span class="nav-indicator"></span>
+            </a>
         </div>
     </div>
     
@@ -441,7 +559,7 @@
             <div class="actions-row">
                 <div class="filters">
                     <button class="filter-btn" data-period="day">Día</button>
-                    <button class="filter-btn active" data-period="week">Semana</button>
+                    <button class="filter-btn {% if period == 'week' %}active{% endif %}" data-period="week">Semana</button>
                     <button class="filter-btn" data-period="month">Mes</button>
                     <button class="filter-btn" data-period="year">Año</button>
                 </div>
@@ -459,18 +577,19 @@
             <div class="stats-row">
                 <div class="stat-card">
                     <div class="stat-title">Total de Turnos</div>
-                    <div class="stat-value">1,248</div>
-                    <div class="stat-change positive">+12.5% vs semana anterior</div>
+                    <div class="stat-value">{{ total_turnos }}</div>
+                    <div class="stat-change {% if cambio_porcentual > 0 %}positive{% elif cambio_porcentual < 0 %}negative{% endif %}">
+                        {% if cambio_porcentual > 0 %}+{% endif %}{{ cambio_porcentual }}% vs período anterior
+                    </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-title">Departamento más Activo</div>
-                    <div class="stat-value">Cardiología</div>
-                    <div class="stat-change">342 turnos esta semana</div>
+                    <div class="stat-value">{{ dept_mas_activo }}</div>
+                    <div class="stat-change">{{ turnos_dept_mas_activo }} turnos este período</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-title">Promedio Diario</div>
-                    <div class="stat-value">178</div>
-                    <div class="stat-change positive">+8.2% vs semana anterior</div>
+                    <div class="stat-value">{{ avg_daily }}</div>
                 </div>
             </div>
             
@@ -490,7 +609,18 @@
                     <div>Porcentaje</div>
                 </div>
                 <div id="tableData">
-                    <!-- Los datos se generarán con JavaScript -->
+                    {% for dept in dept_counts %}
+                    <div class="table-row">
+                        <div class="dept-name">{{ dept.departamento }}</div>
+                        <div>{{ dept.total }}</div>
+                        <div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: {{ dept.porcentaje }}%; background-color: {{ department_colors|safe }}[{{ forloop.counter0 }}]"></div>
+                            </div>
+                            <div style="margin-top: 5px;">{{ dept.porcentaje }}%</div>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
             
@@ -503,65 +633,32 @@
     </div>
     
     <script>
-        // Datos de ejemplo - Turnos por departamento
+        // Datos reales desde Django
         const turnosData = {
-            day: {
-                labels: ['Cardiología', 'Pediatría', 'Neurología', 'Traumatología', 'Ginecología', 'Oftalmología', 'Dermatología'],
-                data: [45, 32, 28, 36, 29, 18, 22]
-            },
-            week: {
-                labels: ['Cardiología', 'Pediatría', 'Neurología', 'Traumatología', 'Ginecología', 'Oftalmología', 'Dermatología'],
-                data: [342, 256, 198, 245, 187, 124, 96]
-            },
-            month: {
-                labels: ['Cardiología', 'Pediatría', 'Neurología', 'Traumatología', 'Ginecología', 'Oftalmología', 'Dermatología'],
-                data: [1250, 980, 820, 950, 780, 520, 410]
-            },
-            year: {
-                labels: ['Cardiología', 'Pediatría', 'Neurología', 'Traumatología', 'Ginecología', 'Oftalmología', 'Dermatología'],
-                data: [15200, 12400, 9800, 11500, 9200, 6300, 5100]
-            }
+            labels: {{ chart_labels|safe }},
+            data: {{ chart_data|safe }}
         };
         
         // Colores para los departamentos
         const departmentColors = [
-            '#3b82f6', // Azul
-            '#f97316', // Naranja
-            '#ef4444', // Rojo
-            '#8b5cf6', // Púrpura
-            '#10b981', // Verde
-            '#f59e0b', // Ámbar
-            '#6366f1'  // Índigo
+            '#3b82f6', '#f97316', '#ef4444', '#8b5cf6', 
+            '#10b981', '#f59e0b', '#6366f1', '#ec4899',
+            '#14b8a6', '#f43f5e', '#0ea5e9', '#84cc16'
         ];
         
-        // Elementos DOM
-        const filterBtns = document.querySelectorAll('.filter-btn');
-        const tableData = document.getElementById('tableData');
-        const navToggle = document.getElementById('navToggle');
-        const navPanel = document.getElementById('navPanel');
-        const navOverlay = document.getElementById('navOverlay');
-        const printBtn = document.getElementById('printBtn');
-        const printDate = document.getElementById('printDate');
-        const printPeriod = document.getElementById('printPeriod');
-        const navItems = document.querySelectorAll('.nav-item');
-        
-        // Variables globales
-        let currentPeriod = 'week';
-        let turnosChart;
-        
-        // Inicializar gráfico
+        // Inicializar gráfico con datos reales
         function initChart() {
             const ctx = document.getElementById('turnosChart').getContext('2d');
             
             turnosChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: turnosData[currentPeriod].labels,
+                    labels: turnosData.labels,
                     datasets: [{
                         label: 'Turnos',
-                        data: turnosData[currentPeriod].data,
-                        backgroundColor: departmentColors,
-                        borderColor: departmentColors,
+                        data: turnosData.data,
+                        backgroundColor: departmentColors.slice(0, turnosData.labels.length),
+                        borderColor: departmentColors.slice(0, turnosData.labels.length),
                         borderWidth: 1
                     }]
                 },
@@ -603,103 +700,12 @@
             });
         }
         
-        // Actualizar gráfico
-        function updateChart(period) {
-            turnosChart.data.labels = turnosData[period].labels;
-            turnosChart.data.datasets[0].data = turnosData[period].data;
-            turnosChart.update();
-        }
-        
-        // Renderizar tabla de datos
-        function renderTable(period) {
-            tableData.innerHTML = '';
-            
-            const data = turnosData[period];
-            const total = data.data.reduce((a, b) => a + b, 0);
-            
-            data.labels.forEach((label, index) => {
-                const value = data.data[index];
-                const percentage = Math.round((value / total) * 100);
-                
-                const row = document.createElement('div');
-                row.className = 'table-row';
-                
-                row.innerHTML = `
-                    <div class="dept-name">${label}</div>
-                    <div>${value}</div>
-                    <div>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" style="width: ${percentage}%; background-color: ${departmentColors[index]}"></div>
-                        </div>
-                        <div style="margin-top: 5px;">${percentage}%</div>
-                    </div>
-                `;
-                
-                tableData.appendChild(row);
-            });
-        }
-        
-        // Cambiar período
+        // Cambiar período - ahora hace una nueva solicitud al servidor
         function changePeriod(period) {
-            currentPeriod = period;
-            
-            // Actualizar botones de filtro
-            filterBtns.forEach(btn => {
-                if (btn.getAttribute('data-period') === period) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-            
-            // Actualizar gráfico y tabla
-            updateChart(period);
-            renderTable(period);
-            
-            // Actualizar estadísticas
-            updateStats(period);
-            
-            // Actualizar texto del período para impresión
-            updatePrintPeriod(period);
-        }
-        
-        // Actualizar estadísticas
-        function updateStats(period) {
-            const statValues = document.querySelectorAll('.stat-value');
-            const statChanges = document.querySelectorAll('.stat-change');
-            
-            // Total de turnos
-            const total = turnosData[period].data.reduce((a, b) => a + b, 0);
-            statValues[0].textContent = total.toLocaleString();
-            
-            // Departamento más activo
-            const maxIndex = turnosData[period].data.indexOf(Math.max(...turnosData[period].data));
-            const maxDept = turnosData[period].labels[maxIndex];
-            const maxValue = turnosData[period].data[maxIndex];
-            statValues[1].textContent = maxDept;
-            
-            // Texto para el período
-            let periodText;
-            switch(period) {
-                case 'day': periodText = 'hoy'; break;
-                case 'week': periodText = 'esta semana'; break;
-                case 'month': periodText = 'este mes'; break;
-                case 'year': periodText = 'este año'; break;
-            }
-            
-            statChanges[1].textContent = `${maxValue.toLocaleString()} turnos ${periodText}`;
-            
-            // Promedio diario
-            let avgDivisor;
-            switch(period) {
-                case 'day': avgDivisor = 1; break;
-                case 'week': avgDivisor = 7; break;
-                case 'month': avgDivisor = 30; break;
-                case 'year': avgDivisor = 365; break;
-            }
-            
-            const avgDaily = Math.round(total / avgDivisor);
-            statValues[2].textContent = avgDaily.toLocaleString();
+            // Actualizar URL con el nuevo período
+            const url = new URL(window.location.href);
+            url.searchParams.set('period', period);
+            window.location.href = url.toString();
         }
         
         // Actualizar texto del período para impresión
@@ -733,13 +739,13 @@
                     break;
             }
             
-            printPeriod.textContent = periodText;
+            document.getElementById('printPeriod').textContent = periodText;
         }
         
         // Mostrar/ocultar navegación en móviles
         function toggleNav() {
-            navPanel.classList.toggle('show');
-            navOverlay.classList.toggle('show');
+            document.getElementById('navPanel').classList.toggle('show');
+            document.getElementById('navOverlay').classList.toggle('show');
             
             // Proporcionar feedback táctil
             if (window.navigator && window.navigator.vibrate) {
@@ -751,7 +757,7 @@
         function printReport() {
             // Actualizar fecha de impresión
             const now = new Date();
-            printDate.textContent = now.toLocaleString();
+            document.getElementById('printDate').textContent = now.toLocaleString();
             
             // Imprimir
             window.print();
@@ -760,7 +766,7 @@
         // Eventos
         
         // Botones de filtro
-        filterBtns.forEach(btn => {
+        document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const period = this.getAttribute('data-period');
                 changePeriod(period);
@@ -768,12 +774,12 @@
         });
         
         // Botón de impresión
-        printBtn.addEventListener('click', printReport);
+        document.getElementById('printBtn').addEventListener('click', printReport);
         
         // Eventos para navegación
-        navItems.forEach(item => {
+        document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', function() {
-                navItems.forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                 this.classList.add('active');
                 
                 // Proporcionar feedback táctil
@@ -790,7 +796,7 @@
             // Evento táctil
             item.addEventListener('touchstart', function(e) {
                 e.preventDefault();
-                navItems.forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                 this.classList.add('active');
                 
                 // Proporcionar feedback táctil
@@ -806,28 +812,32 @@
         });
         
         // Eventos para navegación en móviles
-        navToggle.addEventListener('click', toggleNav);
-        navToggle.addEventListener('touchstart', function(e) {
+        document.getElementById('navToggle').addEventListener('click', toggleNav);
+        document.getElementById('navToggle').addEventListener('touchstart', function(e) {
             e.preventDefault();
             toggleNav();
         });
         
-        navOverlay.addEventListener('click', toggleNav);
-        navOverlay.addEventListener('touchstart', function(e) {
+        document.getElementById('navOverlay').addEventListener('click', toggleNav);
+        document.getElementById('navOverlay').addEventListener('touchstart', function(e) {
             e.preventDefault();
             toggleNav();
         });
         
-        // Inicializar
+        // Inicializar con datos reales
         document.addEventListener('DOMContentLoaded', function() {
             initChart();
-            renderTable(currentPeriod);
-            updateStats(currentPeriod);
-            updatePrintPeriod(currentPeriod);
+            updatePrintPeriod('{{ period }}');
+            
+            // Marcar el botón de filtro activo
+            const activeBtn = document.querySelector(`.filter-btn[data-period="{{ period }}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
             
             // Inicializar fecha de impresión
             const now = new Date();
-            printDate.textContent = now.toLocaleString();
+            document.getElementById('printDate').textContent = now.toLocaleString();
         });
     </script>
 </body>

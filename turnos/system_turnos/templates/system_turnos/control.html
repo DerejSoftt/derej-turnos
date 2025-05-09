@@ -799,6 +799,7 @@
     
     <!-- JavaScript -->
     <script>
+
     document.addEventListener('DOMContentLoaded', function() {
         // Elementos DOM
         const callBtn = document.getElementById('callBtn');
@@ -832,6 +833,24 @@
         let turnosData = [];
         let historialData = [];
         let departamentoUsuario = '';
+
+        // Función para recarga suave
+        function softReload() {
+            showLoading();
+            fetch(window.location.href, {
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            })
+            .then(() => {
+                window.location.reload();
+            })
+            .catch(() => {
+                // Si falla, recargar de todos modos
+                window.location.reload();
+            });
+        }
 
         // Inicialización
         function init() {
@@ -1021,6 +1040,11 @@
                         const turno = turnosData.find(t => t.id === turnoId) || historialData.find(t => t.id === turnoId);
                         if (turno) showCallNotification(turno.ticket);
                     }
+
+                    // Recargar suavemente después de ciertas acciones
+                    if (newStatus === 'atendido' || newStatus === 'cancelado') {
+                        setTimeout(softReload, 1000);
+                    }
                 } else {
                     alert(data.error || 'Error al actualizar el turno');
                 }
@@ -1174,7 +1198,8 @@
         // Inicializar aplicación
         init();
     });
-    </script>
+</script>
+ 
     
 </body>
 </html>

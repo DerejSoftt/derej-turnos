@@ -18,3 +18,120 @@
     </div>
 </body>
 </html>
+
+
+
+    <!-- <script> -->
+
+        // const socket = new WebSocket(`wss://${window.location.host}/ws/turnos/`);
+        
+        // socket.onmessage = function(e) {
+        //     const data = JSON.parse(e.data);
+        //     if(data.type === 'turno_update') {
+        //         const turno = data.data;
+                
+        //         // Busca si el turno ya existe en la lista
+        //         const existingTurno = document.querySelector(`.list-ticket:contains('${turno.numerodeticker}')`);
+                
+        //         if(turno.estado === 'atendido' || turno.estado === 'cancelado') {
+        //             // Elimina el turno si está atendido/cancelado
+        //             if(existingTurno) {
+        //                 existingTurno.closest('.list-item').remove();
+                        
+        //                 // Muestra mensaje si no quedan turnos
+        //                 if(document.querySelectorAll('.list-item:not(.list-header)').length === 0) {
+        //                     document.querySelector('.appointments-list').innerHTML += `
+        //                         <div class="list-item" style="text-align: center; padding: 30px; color: #64748b;">
+        //                             No hay turnos pendientes
+        //                         </div>`;
+        //                 }
+        //             }
+        //         } else {
+        //             // Actualiza o crea el turno
+        //             if(existingTurno) {
+        //                 // Actualiza el turno existente
+        //                 const item = existingTurno.closest('.list-item');
+                        
+        //                 // Actualiza estado e icono
+        //                 const statusElement = item.querySelector('.list-status');
+        //                 statusElement.className = `list-status ${
+        //                     turno.estado === 'pendiente' ? 'status-pending' :
+        //                     turno.estado === 'llamado' ? 'status-calling' :
+        //                     'status-other'
+        //                 }`;
+                        
+        //                 const iconElement = statusElement.querySelector('i');
+        //                 iconElement.className = `fas ${
+        //                     turno.estado === 'pendiente' ? 'fa-hourglass-half' :
+        //                     turno.estado === 'llamado' ? 'fa-bullhorn' :
+        //                     'fa-question'
+        //                 }`;
+                        
+        //                 statusElement.childNodes[1].textContent = 
+        //                     turno.estado === 'llamado' ? 'Llamando' : 
+        //                     turno.estado.charAt(0).toUpperCase() + turno.estado.slice(1);
+                        
+        //                 // Efecto especial para turnos llamados
+        //                 if(turno.estado === 'llamado') {
+        //                     item.style.animation = 'highlight 2s';
+        //                     setTimeout(() => {
+        //                         item.style.animation = '';
+        //                     }, 2000);
+        //                 }
+        //             } else {
+        //                 // Crea un nuevo elemento de turno
+        //                 const turnoHtml = `
+        //                     <div class="list-item" ${turno.estado === 'llamado' ? 'style="animation: highlight 2s;"' : ''}>
+        //                         <div class="list-ticket-container">
+        //                             <span class="list-ticket">${turno.numerodeticker}</span>
+        //                         </div>
+        //                         <div class="list-consultorio-container">
+        //                             <span class="list-consultorio">${turno.departamento?.descripcion || 'N/A'}</span>
+        //                         </div>
+        //                         <div class="list-dept-container">
+        //                             <span class="list-dept">${turno.departamento?.nombre || 'N/A'}</span>
+        //                         </div>
+        //                         <div class="list-status-container">
+        //                             <span class="list-status ${
+        //                                 turno.estado === 'pendiente' ? 'status-pending' :
+        //                                 turno.estado === 'llamado' ? 'status-calling' :
+        //                                 'status-other'
+        //                             }">
+        //                                 <i class="fas ${
+        //                                     turno.estado === 'pendiente' ? 'fa-hourglass-half' :
+        //                                     turno.estado === 'llamado' ? 'fa-bullhorn' :
+        //                                     'fa-question'
+        //                                 }"></i>
+        //                                 ${
+        //                                     turno.estado === 'llamado' ? 'Llamando' : 
+        //                                     turno.estado.charAt(0).toUpperCase() + turno.estado.slice(1)
+        //                                 }
+        //                             </span>
+        //                         </div>
+        //                     </div>`;
+        //                 document.querySelector('.appointments-list').insertAdjacentHTML('afterbegin', turnoHtml);
+        //             }
+        //         }
+        //     }
+        // };
+        
+        // // Reconexión automática cada 5 segundos si falla
+        // socket.onclose = function() {
+        //     setTimeout(() => window.location.reload(), 5000);
+        // };
+
+        // // Función para reproducir sonido de llamada (opcional)
+        // function playCallSound() {
+        //     const audio = new Audio('/static/sounds/call.mp3');
+        //     audio.play().catch(e => console.log("No se pudo reproducir sonido:", e));
+        // }
+
+        // // Escuchar eventos específicos de llamada
+        // socket.onmessage = function(e) {
+        //     const data = JSON.parse(e.data);
+        //     if(data.type === 'turno_update' && data.data.estado === 'llamado') {
+        //         playCallSound();
+        //     }
+        //     // ... resto del código de manejo de mensajes ...
+        // };
+    <!-- </script> -->

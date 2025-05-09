@@ -248,134 +248,326 @@
             <p>Su número de turno es:</p>
             <div class="turno-numero" id="numeroTurno"></div>
             <p>Nombre: <span id="nombreCliente"></span></p>
-            <button onclick="cerrarModal()">Aceptar</button>
+            <!-- <button onclick="cerrarModal()">Aceptar</button> -->
         </div>
     </div>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-    // Elementos del DOM
-    const cedulaForm = document.getElementById('cedulaForm');
-    const errorMessage = document.getElementById('errorMessage');
-    const loader = document.getElementById('loader');
-    const turnoModal = document.getElementById('turnoModal');
-    const numeroTurno = document.getElementById('numeroTurno');
-    const departamentoModal = document.getElementById('departamentoModal');
-    const nombreCliente = document.getElementById('nombreCliente');
-    const cedulaInput = document.getElementById('cedula');
-    let redireccionTimeout;
-
-    // Manejar el envío del formulario
-    cedulaForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(cedulaForm);
-        const cedula = formData.get('cedula').trim();
-        const departamentoId = formData.get('departamento_id').trim();
-        
-        if (!cedula) {
-            showError('Por favor ingrese su número de cédula');
-            cedulaInput.focus();
-            return;
-        }
-        
-        showLoader(true);
-        
-        fetch("{% url 'verificar_cedula' %}", {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos del DOM
+            const elements = {
+                form: document.getElementById('cedulaForm'),
+                error: document.getElementById('errorMessage'),
+                loader: document.getElementById('loader'),
+                modal: document.getElementById('turnoModal'),
+                numeroTurno: document.getElementById('numeroTurno'),
+                departamentoModal: document.getElementById('departamentoModal'),
+                nombreCliente: document.getElementById('nombreCliente'),
+                cedula: document.getElementById('cedula'),
+                ticketContent: document.getElementById('ticket-content'),
+                ticketDepartamento: document.getElementById('ticket-departamento'),
+                ticketNombre: document.getElementById('ticket-nombre'),
+                ticketTurno: document.getElementById('ticket-turno'),
+                ticketFecha: document.getElementById('ticket-fecha')
+            };
+    
+            // Función para validar cédula (ejemplo para República Dominicana)
+            function validarCedula(cedula) {
+                if (!cedula || cedula.length !== 11 || !/^\d+$/.test(cedula)) {
+                    return false;
+                }
+                return true;
             }
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Error en la respuesta del servidor');
-            return response.json();
-        })
-        .then(data => {
-            if (data.status === 'success') {
-                showTurnoModal(data.turno, data.departamento, data.nombre);
-                cedulaForm.reset();
-                printTicket(data.turno, data.departamento, data.nombre);
-            } else {
-                showError(data.message || 'Ocurrió un error al procesar su solicitud');
+    
+            // Función mejorada para imprimir
+            function printTicket(ticketHtml) {
+                return new Promise((resolve, reject) => {
+                    try {
+                        const printWindow = window.open('', '_blank');
+                        printWindow.document.open();
+                        printWindow.document.write(ticketHtml);
+                        printWindow.document.close();
+                        
+                        // Esperar a que el contenido se cargue
+                        printWindow.onload = function() {
+                            try {
+                                printWindow.focus(); // Necesario para IE
+                                printWindow.print();
+                                
+                                // Cerrar después de imprimir (con retraso para Chrome)
+                                setTimeout(() => {
+                                    printWindow.close();
+                                    resolve();
+                                }, 500);
+                            } catch (e) {
+                                printWindow.close();
+                                reject(new Error('Error al imprimir: ' + e.message));
+                            }
+                        };
+                    } catch (e) {
+                        reject(new Error('No se pudo abrir ventana de impresión: ' + e.message));
+                    }
+                });
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showError('Ocurrió un error al comunicarse con el servidor');
-        })
-        .finally(() => {
-            showLoader(false);
-        });
-    });
-
-    // Función para imprimir el ticket usando print.js
-    function printTicket(turno, departamento, nombre) {
-        // Crear contenido HTML para el ticket
-        const content = `
-            <div style="width: 80mm; padding: 5mm; font-family: Arial, sans-serif; text-align: center;">
-                <div style="font-weight: bold; font-size: 18px; margin-bottom: 10px;">SISTEMA DE TURNOS</div>
-                <hr style="border: 0; height: 1px; background: #333; margin: 10px 0;">
-                <div style="margin: 8px 0; font-size: 14px;"><strong>Departamento:</strong><br>${departamento}</div>
-                <div style="margin: 8px 0; font-size: 14px;"><strong>Cliente:</strong><br>${nombre}</div>
-                <div style="font-size: 28px; font-weight: bold; margin: 15px 0; color: #000;">${turno}</div>
-                <hr style="border: 0; height: 1px; background: #333; margin: 10px 0;">
-                <div style="font-size: 12px; margin-top: 15px;">${new Date().toLocaleString()}</div>
+    
+            // Función mejorada para generar el HTML del ticket
+            function generateTicketHTML(turno, departamento, nombre, fecha, hora) {
+                return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Ticket de Turno</title>
+        <meta charset="UTF-8">
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                font-family: 'Arial Narrow', Arial, sans-serif;
+            }
+            body { 
+                width: 70mm; 
+                padding: 5mm;
+                font-size: 12pt;
+            }
+            .ticket {
+                text-align: center;
+            }
+            .header { 
+                font-weight: bold; 
+                font-size: 16pt;
+                margin-bottom: 8pt;
+                text-transform: uppercase;
+            }
+            .separator {
+                border-top: 1px dashed #000;
+                margin: 8pt 0;
+            }
+            .turno-label {
+                font-size: 10pt;
+                margin-bottom: 4pt;
+            }
+            .turno-numero {
+                font-size: 28pt;
+                font-weight: bold;
+                margin: 12pt 0;
+                color: #000;
+                letter-spacing: 2pt;
+            }
+            .info {
+                margin: 6pt 0;
+                font-size: 11pt;
+                text-align: left;
+                padding-left: 10mm;
+            }
+            .info-label {
+                font-weight: bold;
+            }
+            .fecha-hora {
+                margin-top: 10pt;
+                font-size: 10pt;
+            }
+            .footer {
+                margin-top: 15pt;
+                font-size: 10pt;
+            }
+            @media print {
+                body { 
+                    width: 70mm; 
+                    padding: 0;
+                }
+                .no-print {
+                    display: none !important;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="ticket">
+            <div class="header">SISTEMA DE TURNOS</div>
+            <div class="separator"></div>
+            
+            <div class="turno-label">Su número de turno</div>
+            <div class="turno-numero">${turno}</div>
+            <div class="separator"></div>
+            
+            <div class="info">
+                <span class="info-label">Departamento:</span> ${departamento}
             </div>
-        `;
-        
-        // Usar print.js para imprimir el contenido
-        printJS({
-            printable: content,
-            type: 'raw-html',
-            header: null,
-            documentTitle: 'Ticket de Turno',
-            css: null,
-            style: `
-                @page { size: 80mm auto; margin: 0; }
-                body { margin: 0; padding: 0; }
-            `,
-            targetStyles: ['*'],
-            onPrintDialogClose: function() {
-                console.log('Ventana de impresión cerrada');
+            <div class="info">
+                <span class="info-label">Cliente:</span> ${nombre}
+            </div>
+            
+            <div class="separator"></div>
+            
+            <div class="fecha-hora">
+                <div>Fecha: ${fecha}</div>
+                <div>Hora: ${hora}</div>
+            </div>
+            
+            <div class="separator"></div>
+            
+            <div class="footer">
+                <div>Gracias por su visita</div>
+                <div>Por favor, espere a ser llamado</div>
+            </div>
+        </div>
+    </body>
+    </html>`;
             }
+    
+            // Función para mostrar error
+            function showError(message, isHtml = false) {
+                if (isHtml) {
+                    elements.error.innerHTML = message;
+                } else {
+                    elements.error.textContent = message;
+                }
+                elements.error.style.display = 'block';
+                elements.error.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+    
+            // Función para cerrar el modal
+            window.cerrarModal = function() {
+                elements.modal.style.display = 'none';
+                elements.form.reset();
+                elements.cedula.focus();
+            };
+    
+            // Manejador del formulario
+            elements.form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Resetear estado
+                elements.loader.style.display = 'flex';
+                elements.error.style.display = 'none';
+                
+                // Obtener datos del formulario
+                const formData = new FormData(elements.form);
+                const cedula = formData.get('cedula').trim();
+                const departamentoId = formData.get('departamento_id').trim();
+                
+                // Validación básica
+                if (!cedula) {
+                    showError('Por favor ingrese su número de cédula');
+                    elements.loader.style.display = 'none';
+                    elements.cedula.focus();
+                    return;
+                }
+                
+                if (!validarCedula(cedula)) {
+                    showError('Por favor ingrese una cédula válida (11 dígitos)');
+                    elements.loader.style.display = 'none';
+                    elements.cedula.focus();
+                    return;
+                }
+                
+                if (!departamentoId) {
+                    showError('Seleccione un departamento válido');
+                    elements.loader.style.display = 'none';
+                    return;
+                }
+    
+                // Enviar datos al servidor
+                fetch("{% url 'verificar_cedula' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.message || 'Error en la respuesta del servidor');
+                        }).catch(() => {
+                            throw new Error('Cliente no registrado');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status !== 'success') {
+                        throw new Error(data.message || 'Error al generar el turno');
+                    }
+                    
+                    // Mostrar modal con el turno generado
+                    elements.numeroTurno.textContent = data.turno;
+                    elements.departamentoModal.textContent = data.departamento;
+                    elements.nombreCliente.textContent = data.nombre;
+                    elements.modal.style.display = 'flex';
+                    
+                    // Actualizar datos del ticket para impresión manual
+                    elements.ticketDepartamento.textContent = data.departamento;
+                    elements.ticketNombre.textContent = data.nombre;
+                    elements.ticketTurno.textContent = data.turno;
+                    elements.ticketFecha.textContent = data.fecha;
+                    
+                    // Generar hora actual para el ticket
+                    const now = new Date();
+                    const hora = now.toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' });
+                    
+                    // Si no se pudo imprimir automáticamente desde el servidor
+                    if (!data.impreso) {
+                        printTicket(generateTicketHTML(
+                            data.turno, 
+                            data.departamento, 
+                            data.nombre, 
+                            data.fecha,
+                            hora
+                        ))
+                        .catch(error => {
+                            console.warn('Advertencia de impresión:', error.message);
+                            showError(`
+                                <p>No se pudo imprimir automáticamente.</p>
+                                <button onclick="window.print()" class="print-button">
+                                    Haz clic aquí para imprimir manualmente
+                                </button>
+                            `, true);
+                        });
+                    }
+                    
+                    // Ocultar modal después de 5 segundos
+                    setTimeout(() => {
+                        if (elements.modal.style.display === 'flex') {
+                            elements.modal.style.display = 'none';
+                            elements.form.reset();
+                            elements.cedula.focus();
+                        }
+                    }, 5000);
+                    
+                    // Redirigir a index después de 50 segundos
+                    setTimeout(() => {
+                        window.location.href = "{% url 'index' %}";
+                    }, 2000);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError(error.message || 'Error de conexión con el servidor');
+                })
+                .finally(() => {
+                    elements.loader.style.display = 'none';
+                });
+            });
+    
+            // Enfocar el campo de cédula al cargar la página
+            elements.cedula.focus();
+    
+            // Cerrar modal al presionar Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && elements.modal.style.display === 'flex') {
+                    cerrarModal();
+                }
+            });
+    
+            // Cerrar modal haciendo clic fuera del contenido
+            elements.modal.addEventListener('click', function(e) {
+                if (e.target === elements.modal) {
+                    cerrarModal();
+                }
+            });
         });
-    }
-
-    // Función para mostrar el modal de turno
-    function showTurnoModal(turno, departamento, nombre) {
-        numeroTurno.textContent = turno;
-        departamentoModal.textContent = departamento;
-        nombreCliente.textContent = nombre;
-        turnoModal.style.display = 'flex';
-        
-        clearTimeout(redireccionTimeout);
-        redireccionTimeout = setTimeout(() => {
-            cerrarModal();
-            window.location.href = "{% url 'index' %}";
-        }, 10000);
-    }
-
-    // Función para cerrar el modal
-    window.cerrarModal = function() {
-        turnoModal.style.display = 'none';
-        clearTimeout(redireccionTimeout);
-    }
-
-    // Función para mostrar errores
-    function showError(message) {
-        errorMessage.textContent = message;
-        errorMessage.style.display = 'block';
-        setTimeout(() => errorMessage.style.display = 'none', 5000);
-    }
-
-    // Función para mostrar/ocultar loader
-    function showLoader(show) {
-        loader.style.display = show ? 'flex' : 'none';
-    }
-});
     </script>
 </body>
 </html>

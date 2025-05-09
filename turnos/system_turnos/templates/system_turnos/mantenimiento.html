@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Turnos | Limpieza</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --danger: #ef233c;
+            --danger-dark: #d90429;
+            --warning: #f8961e;
+            --warning-dark: #f3722c;
+            --success: #43aa8b;
+            --success-dark: #4d908e;
+            --dark: #2b2d42;
+            --light: #f8f9fa;
+            --gray: #adb5bd;
+            --border-radius: 12px;
+            --shadow: 0 4px 20px rgba(0,0,0,0.08);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f7ff;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .admin-dashboard {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: white;
+            padding: 2rem 1rem;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+            padding-left: 0.5rem;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .logo-text {
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: var(--border-radius);
+            color: var(--dark);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: #f0f4ff;
+            color: var(--primary);
+        }
+
+        .nav-link i {
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-title {
+            font-size: 0.875rem;
+            color: var(--gray);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-change {
+            font-size: 0.75rem;
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .stat-change.down {
+            color: var(--danger);
+        }
+
+        /* Clean Options */
+        .clean-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-title i {
+            color: var(--primary);
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .option-card {
+            border: 1px solid #e9ecef;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .option-card:hover {
+            border-color: var(--primary);
+        }
+
+        .option-title {
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .option-desc {
+            color: var(--gray);
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        input[type="date"], select, input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+
+        input[type="date"]:focus, select:focus, input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            background-color: var(--primary);
+            color: white;
+            border: 2px solid var(--primary-dark);
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .btn i {
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary-dark);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            border-color: var(--danger-dark);
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-dark);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+            border-color: var(--warning-dark);
+        }
+
+        .btn-warning:hover {
+            background: var(--warning-dark);
+        }
+
+        .btn-secondary {
+            background: var(--gray);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #6c757d;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+            z-index: 9999;
+            padding: 1rem;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--border-radius);
+            width: 100%;
+            max-width: 500px;
+            padding: 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transform: translateY(20px);
+            transition: var(--transition);
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        .modal-body {
+            margin-bottom: 2rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: var(--transition);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .alert.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .alert-success {
+            background: rgba(67, 170, 139, 0.1);
+            border-left: 4px solid var(--success);
+            color: var(--success-dark);
+        }
+
+        .alert-error {
+            background: rgba(239, 35, 60, 0.1);
+            border-left: 4px solid var(--danger);
+            color: var(--danger-dark);
+        }
+
+        /* Auth Error */
+        #auth-error {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: var(--border-radius);
+            background-color: rgba(239, 35, 60, 0.1);
+            border-left: 4px solid var(--danger);
+            color: var(--danger-dark);
+            display: none;
+            transition: var(--transition);
+        }
+
+        #auth-error.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Loader */
+        .loader-container {
+            display: none;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #f0f4ff;
+            border-bottom-color: var(--primary);
+            border-radius: 50%;
+            display: inline-block;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .admin-dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                height: auto;
+                position: relative;
+                padding: 1rem;
+            }
+
+            .logo {
+                margin-bottom: 1.5rem;
+            }
+
+            .nav-menu {
+                display: flex;
+                overflow-x: auto;
+                padding-bottom: 0.5rem;
+            }
+
+            .nav-item {
+                margin-bottom: 0;
+                margin-right: 0.5rem;
+            }
+
+            .nav-link span {
+                display: none;
+            }
+
+            .main-content {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">T</div>
+                <span class="logo-text">TurnosApp</span>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i>📊</i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link active">
+                        <i>🧹</i>
+                        <span>Limpieza</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i>⚙️</i>
+                        <span>Configuración</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i>👤</i>
+                        <span>Usuarios</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="header">
+                <h1 class="page-title">Limpieza de Turnos</h1>
+                <div class="user-profile">
+                    <div class="user-avatar">AD</div>
+                    <span>Admin</span>
+                </div>
+            </div>
+
+            <!-- Alert -->
+            <div id="alert-message" class="alert">
+                <i>ℹ️</i>
+                <span id="alert-text"></span>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">
+                        <i>📋</i>
+                        <span>Total Turnos</span>
+                    </div>
+                    <div class="stat-value" id="total-turns">0</div>
+                    <div class="stat-change">
+                        <i>↗️</i>
+                        <span>+12% esta semana</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">
+                        <i>⏳</i>
+                        <span>Pendientes</span>
+                    </div>
+                    <div class="stat-value" id="pending-turns">0</div>
+                    <div class="stat-change">
+                        <i>↗️</i>
+                        <span>+5% hoy</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">
+                        <i>✅</i>
+                        <span>Atendidos</span>
+                    </div>
+                    <div class="stat-value" id="completed-turns">0</div>
+                    <div class="stat-change down">
+                        <i>↘️</i>
+                        <span>-2% hoy</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">
+                        <i>❌</i>
+                        <span>Cancelados</span>
+                    </div>
+                    <div class="stat-value" id="canceled-turns">0</div>
+                    <div class="stat-change">
+                        <i>➡️</i>
+                        <span>Sin cambios</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clean Options -->
+            <section class="clean-section">
+                <h2 class="section-title">
+                    <i>🧹</i>
+                    <span>Opciones de Limpieza</span>
+                </h2>
+                <div class="options-grid">
+                    <!-- Clean All -->
+                    <div class="option-card">
+                        <h3 class="option-title">
+                            <i>🔥</i>
+                            <span>Limpiar Todo</span>
+                        </h3>
+                        <p class="option-desc">Eliminar todos los turnos del sistema. Esta acción no se puede deshacer.</p>
+                        <button id="clean-all" class="btn btn-danger">
+                            <i>🗑️</i>
+                            <span>Limpiar Todo</span>
+                        </button>
+                    </div>
+
+                    <!-- Clean by Date -->
+                    <div class="option-card">
+                        <h3 class="option-title">
+                            <i>📅</i>
+                            <span>Limpiar Antiguos</span>
+                        </h3>
+                        <p class="option-desc">Eliminar turnos anteriores a una fecha específica.</p>
+                        <div class="form-group">
+                            <label for="clean-date">Seleccionar fecha:</label>
+                            <input type="date" id="clean-date" name="clean-date">
+                        </div>
+                        <button id="clean-old" class="btn btn-warning">
+                            <i>🧽</i>
+                            <span>Limpiar Antiguos</span>
+                        </button>
+                    </div>
+
+                    <!-- Clean by Status -->
+                    <div class="option-card">
+                        <h3 class="option-title">
+                            <i>🏷️</i>
+                            <span>Limpiar por Estado</span>
+                        </h3>
+                        <p class="option-desc">Eliminar turnos según su estado actual.</p>
+                        <div class="form-group">
+                            <label for="status-select">Seleccionar estado:</label>
+                            <select id="status-select">
+                                <option value="pendiente">Pendientes</option>
+                                <option value="llamado">Llamados</option>
+                                <option value="atendido">Atendidos</option>
+                                <option value="cancelado">Cancelados</option>
+                            </select>
+                        </div>
+                        <button id="clean-status" class="btn btn-warning">
+                            <i>🧼</i>
+                            <span>Limpiar por Estado</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loader -->
+            <div class="loader-container" id="loader">
+                <div class="loader"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Authentication Modal -->
+    <div class="modal" id="auth-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Autenticación Requerida</h3>
+                <button class="modal-close" id="cancel-auth">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Esta acción requiere autenticación de superusuario</p>
+                <div class="form-group">
+                    <label for="auth-user">Usuario:</label>
+                    <input type="text" id="auth-user" class="form-control" placeholder="Ingrese su usuario">
+                </div>
+                <div class="form-group">
+                    <label for="auth-pass">Contraseña:</label>
+                    <input type="password" id="auth-pass" class="form-control" placeholder="Ingrese su contraseña">
+                </div>
+                <div id="auth-error" class="alert alert-error" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancel-auth-btn">Cancelar</button>
+                <button class="btn btn-primary" id="confirm-auth">Autenticar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+    // Elementos del DOM
+    const cleanAllBtn = document.getElementById('clean-all');
+    const cleanOldBtn = document.getElementById('clean-old');
+    const cleanStatusBtn = document.getElementById('clean-status');
+    const alertMessage = document.getElementById('alert-message');
+    const alertText = document.getElementById('alert-text');
+    const loader = document.getElementById('loader');
+    const dateInput = document.getElementById('clean-date');
+    const statusSelect = document.getElementById('status-select');
+    const authError = document.getElementById('auth-error');
+    
+    // Variables de estado
+    let currentAction = null;
+    let actionParams = {};
+    
+    // Inicialización
+    init();
+    
+    // Event Listeners
+    cleanAllBtn.addEventListener('click', () => prepareCleanAction('all'));
+    cleanOldBtn.addEventListener('click', () => prepareCleanAction('old'));
+    cleanStatusBtn.addEventListener('click', () => prepareCleanAction('status'));
+    
+    document.getElementById('confirm-auth').addEventListener('click', verifySuperUser);
+    document.getElementById('cancel-auth').addEventListener('click', closeAuthModal);
+    document.getElementById('cancel-auth-btn').addEventListener('click', closeAuthModal);
+
+    // Funciones
+    function init() {
+        // Configurar fecha por defecto (hace 1 mes)
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        dateInput.valueAsDate = oneMonthAgo;
+        
+        // Cargar estadísticas iniciales
+        loadTurnStats();
+    }
+    
+    function prepareCleanAction(actionType) {
+        switch(actionType) {
+            case 'all':
+                actionParams = { tipo: 'all' };
+                showAuthModal('Eliminar Todos los Turnos');
+                break;
+            case 'old':
+                if (!dateInput.value) {
+                    showAlert('❌ Por favor seleccione una fecha', 'error');
+                    return;
+                }
+                actionParams = { 
+                    tipo: 'old',
+                    fecha: dateInput.value
+                };
+                showAuthModal('Eliminar Turnos Antiguos');
+                break;
+            case 'status':
+                const status = statusSelect.value;
+                actionParams = { 
+                    tipo: 'status',
+                    estado: status
+                };
+                showAuthModal(`Eliminar Turnos ${statusSelect.options[statusSelect.selectedIndex].text}`);
+                break;
+        }
+    }
+    
+    function showAuthModal(title) {
+        document.getElementById('auth-modal').classList.add('active');
+        document.querySelector('#auth-modal .modal-title').textContent = title;
+        authError.style.display = 'none';
+        document.getElementById('auth-user').value = '';
+        document.getElementById('auth-pass').value = '';
+    }
+    
+    function closeAuthModal() {
+        document.getElementById('auth-modal').classList.remove('active');
+    }
+    
+    async function verifySuperUser() {
+        const username = document.getElementById('auth-user').value;
+        const password = document.getElementById('auth-pass').value;
+        
+        // Resetear mensaje de error previo
+        authError.textContent = '';
+        authError.style.display = 'none';
+        
+        if (!username || !password) {
+            showAuthError('❌ Usuario y contraseña son requeridos');
+            return;
+        }
+        
+        showLoader(true);
+        
+        try {
+            const response = await fetch('/verificar_superusuario/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || '❌ Error en la autenticación');
+            }
+            
+            if (data.success) {
+                closeAuthModal();
+                await executeClean(data.nombre);
+                showAlert('✅ Turnos borrados exitosamente', 'success');
+                // Recargar estadísticas después de borrar
+                loadTurnStats();
+            } else {
+                throw new Error(data.error || '❌ Credenciales incorrectas');
+            }
+        } catch (error) {
+            showAuthError(error.message);
+            console.error('Error:', error);
+        } finally {
+            showLoader(false);
+        }
+    }
+    
+    function showAuthError(message) {
+        authError.textContent = message;
+        authError.style.display = 'block';
+        authError.classList.add('show');
+        
+        setTimeout(() => {
+            authError.classList.remove('show');
+        }, 5000);
+    }
+    
+    async function executeClean(nombreSuperUsuario) {
+        showLoader(true);
+        
+        try {
+            const response = await fetch('/limpiar_turnos/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(actionParams)
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error('❌ Error al realizar la limpieza');
+            }
+            
+            if (!data.success) {
+                throw new Error('❌ No se pudieron borrar los turnos');
+            }
+            
+            // Mostrar mensaje de éxito
+            showAlert(`✅ Turnos borrados correctamente por ${nombreSuperUsuario}`, 'success');
+            
+        } catch (error) {
+            showAlert(error.message, 'error');
+            console.error('Error:', error);
+        } finally {
+            showLoader(false);
+        }
+    }
+    
+    async function loadTurnStats() {
+        showLoader(true);
+        try {
+            const response = await fetch('obtener_estadisticas_turnos/');
+            const data = await response.json();
+            
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || '❌ Error al cargar estadísticas');
+            }
+            
+            // Actualizar los valores en el frontend con datos reales
+            document.getElementById('total-turns').textContent = data.total.toLocaleString();
+            document.getElementById('pending-turns').textContent = data.pendientes.toLocaleString();
+            document.getElementById('completed-turns').textContent = data.atendidos.toLocaleString();
+            document.getElementById('canceled-turns').textContent = data.cancelados.toLocaleString();
+            
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert(error.message, 'error');
+            
+            // Mostrar ceros si hay error
+            document.getElementById('total-turns').textContent = '0';
+            document.getElementById('pending-turns').textContent = '0';
+            document.getElementById('completed-turns').textContent = '0';
+            document.getElementById('canceled-turns').textContent = '0';
+        } finally {
+            showLoader(false);
+        }
+    }
+    
+    function showAlert(message, type) {
+        alertText.textContent = message;
+        alertMessage.className = `alert alert-${type} show`;
+        
+        setTimeout(() => {
+            alertMessage.classList.remove('show');
+        }, 5000);
+    }
+    
+    function showLoader(show) {
+        loader.style.display = show ? 'flex' : 'none';
+    }
+    
+    function getCSRFToken() {
+        // 1. Primero intenta obtener el token de un input hidden (si usas {% csrf_token %})
+        let csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfInput) {
+            return csrfInput.value;
+        }
+        
+        // 2. Si no existe, obtén el token de las cookies
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+    </script>
+</body>
+</html>

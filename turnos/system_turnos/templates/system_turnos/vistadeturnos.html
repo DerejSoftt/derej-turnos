@@ -1,6 +1,532 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    {% load static %} 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Visualización Completa de Turnos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            touch-action: manipulation;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* Encabezado */
+        .header {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo i {
+            font-size: 22px;
+        }
+        
+        /* Contenido principal */
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 25px auto;
+            padding: 0 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .page-title {
+            font-size: 28px;
+            color: #1e3a8a;
+            margin-bottom: 25px;
+            text-align: center;
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 10px;
+        }
+        
+        .page-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 2px;
+        }
+        
+        /* Tabla de departamentos */
+        .departments-container {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .department-card {
+            background-color: white;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .department-header {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .department-count {
+            background-color: white;
+            color: #1d4ed8;
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 14px;
+        }
+        
+        .department-turns {
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 0;
+        }
+        
+        .turn-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: all 0.2s;
+        }
+        
+        .turn-item:last-child {
+            border-bottom: none;
+        }
+        
+        .turn-item:hover {
+            background-color: #f8fafc;
+        }
+        
+        .turn-number {
+            font-weight: bold;
+            color: #1e3a8a;
+            font-size: 20px;
+            background-color: #dbeafe;
+            padding: 8px 12px;
+            border-radius: 8px;
+            min-width: 70px;
+            text-align: center;
+        }
+        
+        .turn-status {
+            font-weight: 600;
+            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 50px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        /* Estilos para estados */
+        .status-pending {
+            background-color: #fef3c7;
+            color: #b45309;
+        }
+        
+        .status-calling {
+            background-color: #fff4e6;
+            color: #e67e22;
+            border: 1px solid #e67e22;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-completed {
+            background-color: #ecfdf5;
+            color: #047857;
+        }
+        
+        .status-cancelled {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .llamando-activo {
+            animation: highlight 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.4); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(230, 126, 34, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 126, 34, 0); }
+        }
+
+        @keyframes highlight {
+            0% { background-color: rgba(255, 244, 230, 0.5); }
+            50% { background-color: rgba(255, 244, 230, 1); }
+            100% { background-color: rgba(255, 244, 230, 0.5); }
+        }
+        
+        /* Scrollbar personalizada */
+        .department-turns::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .department-turns::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 0 0 14px 0;
+        }
+        
+        .department-turns::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        .department-turns::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Estilos para pantallas medianas */
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 24px;
+            }
+            
+            .departments-container {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            }
+            
+            .department-header {
+                font-size: 16px;
+                padding: 12px 15px;
+            }
+            
+            .turn-item {
+                padding: 12px 15px;
+            }
+            
+            .turn-number {
+                font-size: 18px;
+                padding: 6px 10px;
+                min-width: 60px;
+            }
+        }
+        
+        /* Estilos para pantallas pequeñas */
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 15px;
+            }
+            
+            .page-title {
+                font-size: 22px;
+                margin-bottom: 20px;
+            }
+            
+            .departments-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Encabezado -->
+    <div class="header">
+        <div class="logo">
+            <i class="fas fa-hospital-alt"></i>
+            <span>Visualización Completa de Turnos</span>
+        </div>
+    </div>
+    
+    <!-- Contenido principal -->
+    <div class="container">
+        <h1 class="page-title">Turnos por Departamento</h1>
+        
+        <!-- Contenedor de departamentos -->
+        <div class="departments-container">
+            {% regroup turnos by departamento as departamentos %}
+            
+            {% for departamento in departamentos %}
+            <div class="department-card">
+                <div class="department-header">
+                    <span>{{ departamento.grouper.nombre }}</span>
+                    <span class="department-count">{{ departamento.list|length }}</span>
+                </div>
+                
+                <div class="department-turns">
+                    {% for turno in departamento.list %}
+                    <div class="turn-item {% if turno.estado == 'llamado' %}llamando-activo{% endif %}">
+                        <span class="turn-number">{{ turno.numerodeticker }}</span>
+                        <span class="turn-status 
+                            {% if turno.estado == 'pendiente' %}status-pending
+                            {% elif turno.estado == 'llamado' %}status-calling
+                            {% elif turno.estado == 'atendido' %}status-completed
+                            {% else %}status-cancelled{% endif %}">
+                            <i class="fas 
+                                {% if turno.estado == 'pendiente' %}fa-hourglass-half
+                                {% elif turno.estado == 'llamado' %}fa-bullhorn
+                                {% elif turno.estado == 'atendido' %}fa-check-circle
+                                {% else %}fa-times-circle{% endif %}"></i>
+                            {% if turno.estado == 'llamado' %}Llamando{% else %}{{ turno.get_estado_display }}{% endif %}
+                        </span>
+                    </div>
+                    {% empty %}
+                    <div class="turn-item" style="justify-content: center; color: #64748b;">
+                        No hay turnos en este departamento
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% empty %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: #64748b;">
+                No hay departamentos con turnos registrados
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <script>
+    class TurnoVoz {
+        constructor() {
+            this.speech = window.speechSynthesis;
+            this.voices = [];
+            this.voiceReady = false;
+            this.currentUtterance = null;
+            this.repetitionInterval = null;
+            this.loadVoices();
+            this.setupVoiceDefaults();
+        }
+
+        setupVoiceDefaults() {
+            this.voiceSettings = {
+                rate: 1.1,
+                pitch: 1.0,
+                volume: 0.9,
+                lang: 'es-ES'
+            };
+        }
+
+        loadVoices() {
+            this.voices = this.speech.getVoices();
+            if (this.voices.length > 0) {
+                this.voiceReady = true;
+                return;
+            }
+
+            this.speech.onvoiceschanged = () => {
+                this.voices = this.speech.getVoices();
+                this.voiceReady = true;
+            };
+        }
+
+        getBestVoice() {
+            const preferredVoices = [
+                { name: 'Microsoft Helena - Spanish (Spain)', rating: 3 },
+                { name: 'Google español', rating: 2 },
+                { lang: 'es-ES', rating: 1 },
+                { lang: 'es-MX', rating: 1 }
+            ];
+
+            for (const preference of preferredVoices) {
+                const foundVoice = this.voices.find(voice => {
+                    if (preference.name) return voice.name.includes(preference.name);
+                    return voice.lang.includes(preference.lang);
+                });
+                if (foundVoice) return foundVoice;
+            }
+            return this.voices[0];
+        }
+
+        anunciarTurno(turno) {
+            if (!this.voiceReady) {
+                setTimeout(() => this.anunciarTurno(turno), 300);
+                return;
+            }
+
+            this.detenerRepeticion();
+            this.speech.cancel();
+
+            const texto = this.generarTextoAnuncio(turno);
+            const utterance = new SpeechSynthesisUtterance(texto);
+            
+            const selectedVoice = this.getBestVoice();
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+                utterance.lang = selectedVoice.lang || this.voiceSettings.lang;
+            }
+
+            utterance.rate = this.voiceSettings.rate;
+            utterance.pitch = this.voiceSettings.pitch;
+            utterance.volume = this.voiceSettings.volume;
+
+            texto.split(',').forEach((part, i) => {
+                if (i > 0) utterance.text = utterance.text.replace(part, `, ${part.trim()}`);
+            });
+
+            utterance.onboundary = (event) => {
+                if (event.name === 'sentence') {
+                    this.speech.pause();
+                    setTimeout(() => this.speech.resume(), 50);
+                }
+            };
+
+            utterance.onend = () => {
+                this.repetitionInterval = setTimeout(() => {
+                    this.anunciarTurno(turno);
+                }, 20000);
+            };
+
+            this.currentUtterance = utterance;
+            this.speech.speak(utterance);
+            this.resaltarTurno(turno.numerodeticker);
+        }
+
+        generarTextoAnuncio(turno) {
+            return `Turno ${this.formatearNumero(turno.numerodeticker)}, 
+                    favor dirigirse a ${turno.departamento.nombre}. 
+                    Repito: Turno ${this.formatearNumero(turno.numerodeticker)}`;
+        }
+
+        formatearNumero(numero) {
+            return numero.split('').join(' ').replace(/([A-Z])/g, ' $1');
+        }
+
+        detenerRepeticion() {
+            if (this.repetitionInterval) {
+                clearTimeout(this.repetitionInterval);
+                this.repetitionInterval = null;
+            }
+        }
+
+        resaltarTurno(numeroTurno) {
+            const items = document.querySelectorAll('.turn-item');
+            items.forEach(item => {
+                const ticketElement = item.querySelector('.turn-number');
+                if (ticketElement && ticketElement.textContent.trim() === numeroTurno.trim()) {
+                    item.classList.add('llamando-activo');
+                    item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    item.classList.remove('llamando-activo');
+                }
+            });
+        }
+    }
+
+    class TurnoPolling {
+        constructor() {
+            this.voz = new TurnoVoz();
+            this.interval = 5000;
+            this.currentTurnId = null;
+            this.init();
+        }
+
+        async init() {
+            await this.checkTurnosLlamados();
+            setInterval(() => this.checkTurnosLlamados(), this.interval);
+        }
+
+        async checkTurnosLlamados() {
+            try {
+                const response = await fetch('/turnos/llamados/?_=' + Date.now());
+                const turnos = await response.json();
+                
+                if (turnos.length > 0) {
+                    const turnoActual = turnos[0];
+                    if (turnoActual.id !== this.currentTurnId) {
+                        this.currentTurnId = turnoActual.id;
+                        this.voz.anunciarTurno(turnoActual);
+                    }
+                } else {
+                    this.currentTurnId = null;
+                    this.voz.detenerRepeticion();
+                    document.querySelectorAll('.llamando-activo').forEach(el => {
+                        el.classList.remove('llamando-activo');
+                    });
+                }
+            } catch (error) {
+                console.error('Error al obtener turnos:', error);
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.getVoices();
+            new TurnoPolling();
+        } else {
+            console.warn('API de síntesis de voz no soportada');
+        }
+    });
+
+    setInterval(() => {
+        window.location.reload();
+    }, 5000);
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% load static %} 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Visualización Completa de Turnos</title>
@@ -210,6 +736,13 @@
             color: #b45309;
         }
         
+        .status-calling {
+            background-color: #fff4e6;
+            color: #e67e22;
+            border: 1px solid #e67e22;
+            animation: pulse 1.5s infinite;
+        }
+        
         .status-completed {
             background-color: #ecfdf5;
             color: #047857;
@@ -218,6 +751,18 @@
         .status-cancelled {
             background-color: #fee2e2;
             color: #b91c1c;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.4); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(230, 126, 34, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 126, 34, 0); }
+        }
+
+        @keyframes highlight {
+            0% { background-color: rgba(255, 244, 230, 0.5); }
+            50% { background-color: rgba(255, 244, 230, 1); }
+            100% { background-color: rgba(255, 244, 230, 0.5); }
         }
         
         /* Scrollbar personalizada */
@@ -326,7 +871,7 @@
 </head>
 <body>
     <!-- Encabezado -->
-    <div class="header">
+    <!-- <div class="header">
         <div class="logo">
             <i class="fas fa-hospital-alt"></i>
             <span>Visualización Completa de Turnos</span>
@@ -334,11 +879,11 @@
     </div>
     
     <!-- Contenido principal -->
-    <div class="container">
+    <!-- <div class="container">
         <h1 class="page-title">Todos los Turnos</h1>
         
         <!-- Lista de turnos con scroll -->
-        <div class="appointments-list">
+       <!--  <div class="appointments-list">
             <div class="list-header">
                 <div>Ticket</div>
                 <div>Consultorio</div>
@@ -352,7 +897,7 @@
                     <span class="list-ticket">{{ turno.numerodeticker }}</span>
                 </div>
                 <div class="list-consultorio-container">
-                    <span class="list-consultorio">Consultorio {{ turno.departamento.consultorio|default:"N/A" }}</span>
+                    <span class="list-consultorio">{{ turno.departamento.descripcion|default:"N/A" }}</span>
                 </div>
                 <div class="list-dept-container">
                     <span class="list-dept">{{ turno.departamento.nombre }}</span>
@@ -360,13 +905,15 @@
                 <div class="list-status-container">
                     <span class="list-status 
                         {% if turno.estado == 'pendiente' %}status-pending
+                        {% elif turno.estado == 'llamado' %}status-calling
                         {% elif turno.estado == 'atendido' %}status-completed
                         {% else %}status-cancelled{% endif %}">
                         <i class="fas 
                             {% if turno.estado == 'pendiente' %}fa-hourglass-half
+                            {% elif turno.estado == 'llamado' %}fa-bullhorn
                             {% elif turno.estado == 'atendido' %}fa-check-circle
                             {% else %}fa-times-circle{% endif %}"></i>
-                        {{ turno.get_estado_display }}
+                        {% if turno.estado == 'llamado' %}Llamando{% else %}{{ turno.get_estado_display }}{% endif %}
                     </span>
                 </div>
             </div>
@@ -376,29 +923,197 @@
             </div>
             {% endfor %}
         </div>
-    </div>
+    </div>  -->
     
-    <script>
-        const socket = new WebSocket(`wss://${window.location.host}/ws/turnos/`);
-        
-        socket.onmessage = function(e) {
-            const data = JSON.parse(e.data);
-            if(data.type === 'turno_update') {
-                // Actualiza solo el turno específico (mejor que recargar todo)
-                const nuevoTurno = data.data;
-                const turnoHtml = `
-                    <div class="list-item">
-                        <div>${nuevoTurno.numerodeticker}</div>
-                        <!-- ... otros campos ... -->
-                    </div>`;
-                document.querySelector('.appointments-list').insertAdjacentHTML('afterbegin', turnoHtml);
-            }
-        };
-        
-        // Reconexión automática cada 5 segundos si falla
-        socket.onclose = function() {
-            setTimeout(() => window.location.reload(), 5000);
-        };
-        </script>
+   <!--  <script>
+    class TurnoVoz {
+  constructor() {
+    this.speech = window.speechSynthesis;
+    this.voices = [];
+    this.voiceReady = false;
+    this.currentUtterance = null;
+    this.repetitionInterval = null;
+    this.loadVoices();
+    this.setupVoiceDefaults();
+  }
+
+  setupVoiceDefaults() {
+    // Pre-configuración de parámetros de voz
+    this.voiceSettings = {
+      rate: 1.1,       // Velocidad ligeramente más rápida (rango 0.1-2)
+      pitch: 1.0,      // Tono normal (rango 0-2)
+      volume: 0.9,     // Volumen alto pero sin distorsión
+      lang: 'es-ES'    // Idioma preferido
+    };
+  }
+
+  loadVoices() {
+    // Cargar voces disponibles
+    this.voices = this.speech.getVoices();
+    if (this.voices.length > 0) {
+      this.voiceReady = true;
+      return;
+    }
+
+    // Esperar si las voces no están cargadas
+    this.speech.onvoiceschanged = () => {
+      this.voices = this.speech.getVoices();
+      this.voiceReady = true;
+    };
+  }
+
+  getBestVoice() {
+    // Buscar voz en español con calidad preferida
+    const preferredVoices = [
+      { name: 'Microsoft Helena - Spanish (Spain)', rating: 3 },
+      { name: 'Google español', rating: 2 },
+      { lang: 'es-ES', rating: 1 },
+      { lang: 'es-MX', rating: 1 }
+    ];
+
+    for (const preference of preferredVoices) {
+      const foundVoice = this.voices.find(voice => {
+        if (preference.name) return voice.name.includes(preference.name);
+        return voice.lang.includes(preference.lang);
+      });
+      if (foundVoice) return foundVoice;
+    }
+    return this.voices[0]; // Usar cualquier voz disponible
+  }
+
+  anunciarTurno(turno) {
+    if (!this.voiceReady) {
+      setTimeout(() => this.anunciarTurno(turno), 300);
+      return;
+    }
+
+    // Cancelar anuncios anteriores
+    this.detenerRepeticion();
+    this.speech.cancel();
+
+    const texto = this.generarTextoAnuncio(turno);
+    const utterance = new SpeechSynthesisUtterance(texto);
+    
+    // Configuración avanzada de voz
+    const selectedVoice = this.getBestVoice();
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      utterance.lang = selectedVoice.lang || this.voiceSettings.lang;
+    }
+
+    // Aplicar configuración
+    utterance.rate = this.voiceSettings.rate;
+    utterance.pitch = this.voiceSettings.pitch;
+    utterance.volume = this.voiceSettings.volume;
+
+    // Mejorar fluidez con pausas estratégicas
+    texto.split(',').forEach((part, i) => {
+      if (i > 0) utterance.text = utterance.text.replace(part, `, ${part.trim()}`);
+    });
+
+    // Manejo de eventos para mayor fluidez
+    utterance.onboundary = (event) => {
+      // Pausa mínima entre frases
+      if (event.name === 'sentence') {
+        this.speech.pause();
+        setTimeout(() => this.speech.resume(), 50);
+      }
+    };
+
+    utterance.onend = () => {
+      this.repetitionInterval = setTimeout(() => {
+        this.anunciarTurno(turno);
+      }, 20000); // Repetir cada 20 segundos
+    };
+
+    this.currentUtterance = utterance;
+    this.speech.speak(utterance);
+    this.resaltarTurno(turno.numerodeticker);
+  }
+
+  generarTextoAnuncio(turno) {
+    // Formato más natural para el habla
+    return `Turno ${this.formatearNumero(turno.numerodeticker)}, 
+            favor dirigirse a ${turno.departamento.nombre}. 
+            Repito: Turno ${this.formatearNumero(turno.numerodeticker)}`;
+  }
+
+  formatearNumero(numero) {
+    // Mejorar pronunciación de números (A123 -> "A uno dos tres")
+    return numero.split('').join(' ').replace(/([A-Z])/g, ' $1');
+  }
+
+  detenerRepeticion() {
+    if (this.repetitionInterval) {
+      clearTimeout(this.repetitionInterval);
+      this.repetitionInterval = null;
+    }
+  }
+
+  resaltarTurno(numeroTurno) {
+    const items = document.querySelectorAll('.list-item');
+    items.forEach(item => {
+      const ticketElement = item.querySelector('.list-ticket');
+      if (ticketElement && ticketElement.textContent.trim() === numeroTurno.trim()) {
+        item.classList.add('llamando-activo');
+        item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  }
+}
+
+class TurnoPolling {
+  constructor() {
+    this.voz = new TurnoVoz();
+    this.interval = 5000; // 5 segundos para polling
+    this.currentTurnId = null;
+    this.init();
+  }
+
+  async init() {
+    await this.checkTurnosLlamados();
+    setInterval(() => this.checkTurnosLlamados(), this.interval);
+  }
+
+  async checkTurnosLlamados() {
+    try {
+      const response = await fetch('/turnos/llamados/?_=' + Date.now()); // Evitar caché
+      const turnos = await response.json();
+      
+      if (turnos.length > 0) {
+        const turnoActual = turnos[0];
+        if (turnoActual.id !== this.currentTurnId) {
+          this.currentTurnId = turnoActual.id;
+          this.voz.anunciarTurno(turnoActual);
+        }
+      } else {
+        this.currentTurnId = null;
+        this.voz.detenerRepeticion();
+        document.querySelectorAll('.llamando-activo').forEach(el => {
+          el.classList.remove('llamando-activo');
+        });
+      }
+    } catch (error) {
+      console.error('Error al obtener turnos:', error);
+    }
+  }
+}
+
+// Iniciar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', () => {
+  if ('speechSynthesis' in window) {
+    // Precargar voces mientras la página carga
+    window.speechSynthesis.getVoices();
+    new TurnoPolling();
+  } else {
+    console.warn('API de síntesis de voz no soportada');
+    alert('Para la mejor experiencia, use Chrome o Edge con voces en español instaladas.');
+  }
+});
+
+setInterval(() => {
+  window.location.reload();
+}, 5000);
+ </script>
 </body>
-</html>
+</html> - --> -->

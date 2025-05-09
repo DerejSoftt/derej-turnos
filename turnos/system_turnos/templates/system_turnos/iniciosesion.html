@@ -7,7 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        /* Estilos CSS integrados */
         :root {
             --primary-color: #4361ee;
             --primary-dark: #3a56d4;
@@ -18,110 +17,133 @@
 
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: #f5f7fb;
+            background: linear-gradient(135deg, #f5f7fb 0%, #e8ecff 100%);
             color: var(--text-color);
             margin: 0;
             padding: 0;
-            height: 100vh;
-            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
         }
 
         .login-container {
-            display: flex;
-            min-height: 100vh;
+            width: 100%;
+            max-width: 450px;
+            margin: 0 auto;
+            padding: 2rem;
         }
 
         .login-card {
             background: white;
-            padding: 2rem;
-            width: 100%;
-            max-width: 450px;
-            margin: auto;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
         }
 
-        .login-logo {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .login-logo i {
-            font-size: 2.5rem;
-            color: var(--primary-color);
-        }
-
-        .login-logo h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-top: 0.5rem;
+        .login-card:hover {
+            transform: translateY(-5px);
         }
 
         .login-header {
-            margin-bottom: 1.5rem;
             text-align: center;
+            margin-bottom: 2rem;
         }
 
-        .login-header h2 {
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-
-        .login-form .input-group {
+        .login-header i {
+            font-size: 2.5rem;
+            color: var(--primary-color);
             margin-bottom: 1rem;
         }
 
-        .login-form .input-group-text {
-            background-color: white;
-            border-right: none;
+        .login-header h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 0.5rem;
         }
 
-        .login-form .form-control {
-            border-left: none;
-            padding: 0.75rem;
+        .login-header p {
+            color: #6c757d;
+            font-size: 0.9rem;
         }
 
-        .login-form .form-control:focus {
-            box-shadow: none;
+        .form-control {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+        }
+
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
         }
 
         .btn-login {
             background-color: var(--primary-color);
             border: none;
-            width: 100%;
             padding: 0.75rem;
-            font-weight: 500;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border-radius: 8px;
+            transition: all 0.3s;
             margin-top: 1rem;
         }
 
         .btn-login:hover {
             background-color: var(--primary-dark);
+            transform: translateY(-2px);
         }
 
         .login-footer {
             text-align: center;
             margin-top: 1.5rem;
             font-size: 0.9rem;
+            color: #6c757d;
         }
 
         .login-footer a {
             color: var(--primary-color);
             text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .alert {
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
         }
 
         @media (max-width: 576px) {
+            .login-container {
+                padding: 1rem;
+            }
+            
             .login-card {
                 padding: 1.5rem;
-                margin: 1rem;
-                box-shadow: none;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="login-container">
-            <h2 class="text-center mb-4">Inicio de Sesión</h2>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <i class="bi bi-calendar-check"></i>
+                <h2>Sistema de Turnos</h2>
+                <p>Ingrese sus credenciales para acceder</p>
+            </div>
             
             {% if messages %}
                 {% for message in messages %}
@@ -136,17 +158,27 @@
                 {% csrf_token %}
                 <div class="mb-3">
                     <label for="username" class="form-label">Usuario</label>
-                    <input type="text" class="form-control" id="username" name="username" required>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Ingrese su usuario" required>
                 </div>
                 <div class="mb-3">
                     <label for="password" class="form-label">Contraseña</label>
-                    <input type="password" class="form-control" id="password" name="password" required>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Ingrese su contraseña" required>
                 </div>
-                <button type="submit" class="btn btn-primary w-100">Ingresar</button>
+                <input type="checkbox" name="remember_me" id="remember_me">
+<label for="remember_me">Mantener sesión abierta</label>
+                <button type="submit" class="btn btn-primary btn-login w-100">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Ingresar
+                </button>
+                
             </form>
+            
+            <div class="login-footer">
+                ¿Problemas para ingresar? <a href="#">Contacte al administrador</a>
+            </div>
+            
         </div>
     </div>
 
-   
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

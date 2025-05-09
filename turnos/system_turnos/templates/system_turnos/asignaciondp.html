@@ -22,92 +22,169 @@
             min-height: 100vh;
         }
         
-        /* Panel de navegación vertical */
-        .nav-panel {
-            background-color: #3b82f6;
-            color: white;
-            width: 250px;
-            min-height: 100vh;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            z-index: 100;
-            transition: transform 0.3s ease;
-        }
-        
-        .nav-logo {
-            padding: 20px;
-            font-size: 22px;
-            font-weight: bold;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .nav-container {
-            display: flex;
-            flex-direction: column;
-            padding: 15px 0;
-        }
+       /* Panel de navegación vertical */
+.nav-panel {
+    background-color: #3b82f6;
+    color: white;
+    width: 280px;
+    min-height: 100vh;
+    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    z-index: 100;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
 
-        .nav-container a {
-            color: #ffffff;
-            text-decoration: none;
-        }
-        
-        .nav-item {
-            padding: 15px 20px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            position: relative;
-            transition: background-color 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .nav-item:active {
-            background-color: #2563eb;
-        }
-        
-        .nav-item.active {
-            background-color: #2563eb;
-        }
-        
-        .nav-item.active::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 4px;
-            background-color: white;
-        }
-        
-        .nav-icon {
-            font-size: 20px;
-            width: 24px;
-            text-align: center;
-        }
-        
-        /* Botón para mostrar/ocultar navegación en móviles */
-        .nav-toggle {
-            display: none;
-            position: fixed;
-            top: 15px;
-            left: 15px;
-            z-index: 200;
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            width: 45px;
-            height: 45px;
-            border-radius: 8px;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
+.nav-logo {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.logo-icon {
+    font-size: 24px;
+}
+
+.logo-text {
+    font-size: 20px;
+    font-weight: bold;
+    white-space: nowrap;
+    transition: opacity 0.3s ease;
+}
+
+.nav-container {
+    display: flex;
+    flex-direction: column;
+    padding: 15px 0;
+    flex-grow: 1;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 25px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+    color: white;
+    text-decoration: none;
+    gap: 12px;
+}
+
+.nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-item:active {
+    transform: scale(0.98);
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.nav-item.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+}
+
+.nav-item.active .nav-indicator {
+    opacity: 1;
+    transform: scaleY(1);
+}
+
+.nav-icon {
+    font-size: 20px;
+    width: 24px;
+    display: flex;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.nav-item:hover .nav-icon {
+    transform: scale(1.1);
+}
+
+.nav-text {
+    flex-grow: 1;
+    white-space: nowrap;
+    transition: opacity 0.3s ease;
+}
+
+.nav-indicator {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background-color: white;
+    opacity: 0;
+    transform: scaleY(0.5);
+    transform-origin: center top;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Versión colapsada */
+.nav-panel.collapsed {
+    width: 80px;
+}
+
+.nav-panel.collapsed .logo-text,
+.nav-panel.collapsed .nav-text {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+}
+
+.nav-panel.collapsed .nav-item {
+    justify-content: center;
+    padding: 15px 0;
+}
+
+/* Botón para mostrar/ocultar navegación */
+.nav-toggle {
+    display: none;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 200;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 8px;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.nav-toggle:hover {
+    background-color: #2563eb;
+    transform: scale(1.05);
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .nav-panel {
+        position: fixed;
+        transform: translateX(-100%);
+    }
+    
+    .nav-panel.open {
+        transform: translateX(0);
+    }
+    
+    .nav-toggle {
+        display: block;
+    }
+}
         
         /* Contenido principal */
         .main-content {
@@ -550,33 +627,41 @@
     
     <!-- Panel de navegación vertical -->
     <div class="nav-panel" id="navPanel">
-        <div class="nav-logo">Hospital Admin</div>
+        <div class="nav-logo">
+            <span class="logo-icon">🏥</span>
+            <span class="logo-text">Hospital Admin</span>
+        </div>
         <div class="nav-container">
-            <div class="nav-item active">
-                
+            <a href="{% url 'creacionuser' %}" class="nav-item {% if request.resolver_match.url_name == 'creacionuser' %}active{% endif %}">
                 <span class="nav-icon">👤</span>
-                <a href="{% url 'creacionuser' %}">Usuarios</a> 
-            </div>
-            <div class="nav-item">
+                <span class="nav-text">Usuarios</span>
+                <span class="nav-indicator"></span>
+            </a>
+            <a href="{% url 'departamentos' %}" class="nav-item {% if request.resolver_match.url_name == 'departamentos' %}active{% endif %}">
                 <span class="nav-icon">🏥</span>
-                <a href="{% url 'departamentos'%}">Departamentos</a> 
-            </div>
-            <div class="nav-item active">
+                <span class="nav-text">Departamentos</span>
+                <span class="nav-indicator"></span>
+            </a>
+            <a href="{% url 'clientes' %}" class="nav-item active">
                 <span class="nav-icon">👥</span>
-               <a href="{% url 'clientes' %}">Clientes</a> 
-            </div>
-            <div class="nav-item">
+                <span class="nav-text">Clientes</span>
+                <span class="nav-indicator"></span>
+            </a>
+            <a href="{% url 'asignaciondp' %}" class="nav-item {% if request.resolver_match.url_name == 'asignaciondp' %}active{% endif %}">
                 <span class="nav-icon">🔄</span>
-               <a href="#">Asignaciones</a> 
-            </div>
-            <div class="nav-item">
+                <span class="nav-text">Asignaciones</span>
+                <span class="nav-indicator"></span>
+            </a>
+            <a href="{% url 'reporte' %}" class="nav-item">
                 <span class="nav-icon">📊</span>
-               <a href=""> Reportes</a> 
-            </div>
-            <div class="nav-item">
+                <span class="nav-text">Reportes</span>
+                <span class="nav-indicator"></span>
+            </a>
+            <a href="" class="nav-item">
                 <span class="nav-icon">⚙️</span>
-               <a href="">Configuración </a> 
-            </div>
+                <span class="nav-text">Configuración</span>
+                <span class="nav-indicator"></span>
+            </a>
         </div>
     </div>
     
@@ -652,259 +737,15 @@
     <div class="toast" id="toast">Cambios guardados correctamente</div>
     
     <script>
-        // Datos de ejemplo
-        const users = [
-            { id: 1, name: 'Ana García', email: 'ana.garcia@ejemplo.com', department: 'Cirugía', avatar: 'AG' },
-            { id: 2, name: 'Carlos Rodríguez', email: 'carlos.rodriguez@ejemplo.com', department: 'Pediatría', avatar: 'CR' },
-            { id: 3, name: 'Elena Martínez', email: 'elena.martinez@ejemplo.com', department: '', avatar: 'EM' },
-            { id: 4, name: 'Javier López', email: 'javier.lopez@ejemplo.com', department: 'Cardiología', avatar: 'JL' },
-            { id: 5, name: 'María Sánchez', email: 'maria.sanchez@ejemplo.com', department: 'Medicina Interna', avatar: 'MS' },
-            { id: 6, name: 'Pedro Fernández', email: 'pedro.fernandez@ejemplo.com', department: '', avatar: 'PF' },
-            { id: 7, name: 'Laura Gómez', email: 'laura.gomez@ejemplo.com', department: 'Cirugía', avatar: 'LG' },
-            { id: 8, name: 'Roberto Díaz', email: 'roberto.diaz@ejemplo.com', department: 'Pediatría', avatar: 'RD' }
-        ];
-        
-        // Mapeo de departamentos
-        const departmentMap = {
-            'surgery': 'Cirugía',
-            'pediatrics': 'Pediatría',
-            'cardiology': 'Cardiología',
-            'internal-medicine': 'Medicina Interna'
-        };
-        
-        // Elementos DOM
-        const usersContainer = document.getElementById('usersContainer');
-        const assignModal = document.getElementById('assignModal');
-        const closeModal = document.getElementById('closeModal');
-        const cancelAssign = document.getElementById('cancelAssign');
-        const saveAssign = document.getElementById('saveAssign');
-        const modalUserName = document.getElementById('modalUserName');
-        const deptSelect = document.getElementById('deptSelect');
-        const toast = document.getElementById('toast');
-        const searchInput = document.getElementById('searchInput');
-        const navItems = document.querySelectorAll('.nav-item');
-        const navToggle = document.getElementById('navToggle');
-        const navPanel = document.getElementById('navPanel');
-        const navOverlay = document.getElementById('navOverlay');
-        
-        // Variables globales
-        let currentUserId = null;
-        
-        // Renderizar usuarios
-        function renderUsers(usersList) {
-            usersContainer.innerHTML = '';
-            
-            usersList.forEach(user => {
-                const row = document.createElement('div');
-                row.className = 'table-row';
-                
-                row.innerHTML = `
-                    <div class="user-avatar">${user.avatar}</div>
-                    <div>
-                        <div class="user-name">${user.name}</div>
-                        <div class="user-email">${user.email}</div>
-                    </div>
-                    <div class="user-email">${user.email}</div>
-                    <div class="dept-select">
-                        <button class="dept-select-btn" data-user-id="${user.id}">
-                            ${user.department || 'Sin asignar'}
-                        </button>
-                    </div>
-                    <div>
-                        <button class="action-btn" data-user-id="${user.id}">Asignar</button>
-                    </div>
-                `;
-                
-                usersContainer.appendChild(row);
-            });
-            
-            // Agregar eventos a los botones de acción
-            document.querySelectorAll('.action-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const userId = parseInt(this.getAttribute('data-user-id'));
-                    openAssignModal(userId);
-                });
-                
-                // Evento táctil
-                btn.addEventListener('touchstart', function(e) {
-                    e.preventDefault();
-                    const userId = parseInt(this.getAttribute('data-user-id'));
-                    openAssignModal(userId);
-                });
-            });
-            
-            // Agregar eventos a los selectores de departamento
-            document.querySelectorAll('.dept-select-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const userId = parseInt(this.getAttribute('data-user-id'));
-                    openAssignModal(userId);
-                });
-                
-                // Evento táctil
-                btn.addEventListener('touchstart', function(e) {
-                    e.preventDefault();
-                    const userId = parseInt(this.getAttribute('data-user-id'));
-                    openAssignModal(userId);
-                });
-            });
+     document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        const activeLink = document.querySelector('.nav-link.active');
+        if (!activeLink || !activeLink.textContent.includes('Limpieza')) {
+            window.location.href = "{% url 'mantenimiento' %}";
         }
-        
-        // Abrir modal de asignación
-        function openAssignModal(userId) {
-            currentUserId = userId;
-            const user = users.find(u => u.id === userId);
-            
-            if (user) {
-                modalUserName.textContent = user.name;
-                
-                // Seleccionar el departamento actual en el select
-                let deptValue = '';
-                
-                if (user.department === 'Cirugía') deptValue = 'surgery';
-                else if (user.department === 'Pediatría') deptValue = 'pediatrics';
-                else if (user.department === 'Cardiología') deptValue = 'cardiology';
-                else if (user.department === 'Medicina Interna') deptValue = 'internal-medicine';
-                
-                deptSelect.value = deptValue;
-                
-                // Mostrar modal
-                assignModal.classList.add('show');
-                
-                // Proporcionar feedback táctil
-                if (window.navigator && window.navigator.vibrate) {
-                    window.navigator.vibrate(50);
-                }
-            }
-        }
-        
-        // Cerrar modal
-        function closeAssignModal() {
-            assignModal.classList.remove('show');
-            currentUserId = null;
-        }
-        
-        // Guardar asignación
-        function saveAssignment() {
-            if (currentUserId) {
-                const selectedDept = deptSelect.value;
-                const deptName = departmentMap[selectedDept] || '';
-                
-                // Actualizar datos
-                const userIndex = users.findIndex(u => u.id === currentUserId);
-                if (userIndex !== -1) {
-                    users[userIndex].department = deptName;
-                    
-                    // Actualizar UI
-                    renderUsers(users);
-                    
-                    // Mostrar toast de confirmación
-                    showToast('Departamento asignado correctamente');
-                }
-                
-                // Cerrar modal
-                closeAssignModal();
-            }
-        }
-        
-        // Mostrar toast de notificación
-        function showToast(message, isError = false) {
-            toast.textContent = message;
-            toast.className = isError ? 'toast error show' : 'toast show';
-            
-            setTimeout(() => {
-                toast.className = 'toast';
-            }, 3000);
-        }
-        
-        // Filtrar usuarios
-        function filterUsers(query) {
-            if (!query) {
-                renderUsers(users);
-                return;
-            }
-            
-            const filtered = users.filter(user => 
-                user.name.toLowerCase().includes(query.toLowerCase()) || 
-                user.email.toLowerCase().includes(query.toLowerCase()) ||
-                (user.department && user.department.toLowerCase().includes(query.toLowerCase()))
-            );
-            
-            renderUsers(filtered);
-        }
-        
-        // Mostrar/ocultar navegación en móviles
-        function toggleNav() {
-            navPanel.classList.toggle('show');
-            navOverlay.classList.toggle('show');
-            
-            // Proporcionar feedback táctil
-            if (window.navigator && window.navigator.vibrate) {
-                window.navigator.vibrate(50);
-            }
-        }
-        
-        // Eventos
-        closeModal.addEventListener('click', closeAssignModal);
-        cancelAssign.addEventListener('click', closeAssignModal);
-        saveAssign.addEventListener('click', saveAssignment);
-        
-        // Evento de búsqueda
-        searchInput.addEventListener('input', function() {
-            filterUsers(this.value);
-        });
-        
-        // Eventos para navegación
-        navItems.forEach(item => {
-            item.addEventListener('click', function() {
-                navItems.forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Proporcionar feedback táctil
-                if (window.navigator && window.navigator.vibrate) {
-                    window.navigator.vibrate(50);
-                }
-                
-                // Cerrar menú en móviles después de seleccionar
-                if (window.innerWidth <= 768) {
-                    toggleNav();
-                }
-                
-                // Aquí se podría cambiar el contenido según la pestaña seleccionada
-            });
-            
-            // Evento táctil
-            item.addEventListener('touchstart', function(e) {
-                e.preventDefault();
-                navItems.forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Proporcionar feedback táctil
-                if (window.navigator && window.navigator.vibrate) {
-                    window.navigator.vibrate(50);
-                }
-                
-                // Cerrar menú en móviles después de seleccionar
-                if (window.innerWidth <= 768) {
-                    toggleNav();
-                }
-            });
-        });
-        
-        // Eventos para mostrar/ocultar navegación
-        navToggle.addEventListener('click', toggleNav);
-        navToggle.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            toggleNav();
-        });
-        
-        navOverlay.addEventListener('click', toggleNav);
-        navOverlay.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            toggleNav();
-        });
-        
-        // Inicializar
-        renderUsers(users);
+    }
+});
     </script>
 </body>
 </html>

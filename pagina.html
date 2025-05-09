@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CocinaElite - Artículos de Cocina Premium</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/lucide-static@latest/font/lucide.css" rel="stylesheet">
+  <style>
+    :root {
+      --background: #f8f5f2;
+      --foreground: #3a3226;
+      --primary: #E07A5F;
+      --primary-light: #F7C9B6;
+      --secondary: #F2CC8F;
+      --secondary-light: #FDF4E3;
+      --accent: #81B29A;
+      --accent-light: #C3E8D7;
+      --border: #e6d9c9;
+      --radius: 1rem;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Header Styles */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background-color: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(4px);
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      padding: 0.75rem 1rem;
+    }
+
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo-img {
+      width: 2rem;
+      height: 2rem;
+    }
+
+    .logo-text {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .menu-button {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: none;
+      border: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      transition: background-color 0.2s;
+    }
+
+    .menu-button:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 0.5rem;
+      width: 12rem;
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: var(--shadow);
+      padding: 0.25rem 0;
+      display: none;
+      animation: slide-up 0.2s ease-out;
+    }
+
+    .dropdown-menu.show {
+      display: block;
+    }
+
+    .dropdown-item {
+      display: block;
+      padding: 0.5rem 1rem;
+      color: var(--foreground);
+      text-decoration: none;
+      transition: background-color 0.2s;
+    }
+
+    .dropdown-item:hover {
+      background-color: var(--secondary-light);
+    }
+
+    /* Hero Section */
+    .hero-section {
+      position: relative;
+      overflow: hidden;
+      border-bottom-left-radius: 1.5rem;
+      border-bottom-right-radius: 1.5rem;
+      margin-bottom: 2rem;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+    }
+
+    .hero-content {
+      padding-top: 2rem;
+      padding-bottom: 3rem;
+      padding-left: 1.25rem;
+      padding-right: 1.25rem;
+      color: white;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .hero-text {
+      margin-bottom: 2rem;
+    }
+
+    .hero-title {
+      font-size: 1.875rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+
+    .hero-description {
+      opacity: 0.9;
+    }
+
+    .hero-image-container {
+      position: relative;
+      aspect-ratio: 16/9;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .image-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 1rem;
+    }
+
+    .image-overlay h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    .image-overlay p {
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
+
+    .cta-button {
+      background-color: white;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s, color 0.2s;
+      border: none;
+    }
+
+    .cta-button:hover {
+      background-color: var(--secondary-light);
+      color: var(--primary-light);
+    }
+
+    /* Product Catalog */
+    .product-catalog {
+      padding: 3rem 1.25rem;
+      background-color: var(--secondary-light);
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .product-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .product-card {
+      background-color: white;
+      border-radius: 1rem;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+
+    .product-card:hover {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .product-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      aspect-ratio: 1/1;
+    }
+
+    .product-card > div:last-child {
+      padding: 1rem;
+    }
+
+    .product-card h3 {
+      font-weight: 500;
+      font-size: 1.125rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .product-card p {
+      color: #6b7280;
+      font-size: 0.875rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .product-card p:last-child {
+      font-weight: 600;
+      color: var(--primary);
+      margin-top: 0.5rem;
+    }
+
+    /* Footer */
+    .footer {
+      background-color: var(--primary);
+      color: white;
+      padding: 2rem 1.25rem;
+    }
+
+    .footer-container {
+      max-width: 28rem;
+      margin: 0 auto;
+    }
+
+    .footer-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .contact-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .contact-item {
+      margin-bottom: 0.5rem;
+    }
+
+    .contact-label {
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    .contact-text {
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
+
+    .footer-bottom {
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      text-align: center;
+      font-size: 0.875rem;
+      opacity: 0.8;
+    }
+
+    /* WhatsApp Float Button */
+    .whatsapp-float {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 50;
+      display: none;
+    }
+
+    .whatsapp-float a {
+      background-color: #25D366;
+      color: white;
+      width: 3rem;
+      height: 3rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .whatsapp-float svg {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      backdrop-filter: blur(2px);
+      display: none;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background-color: white;
+      border-radius: 1rem;
+      width: 100%;
+      max-width: 28rem;
+      margin: 0 auto;
+      padding: 1.5rem;
+      position: relative;
+      z-index: 50;
+      animation: fade-in 0.3s ease-out forwards;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-close {
+      position: absolute;
+      right: 1rem;
+      top: 1rem;
+      width: 2rem;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background-color: #f3f4f6;
+      border: none;
+      cursor: pointer;
+      font-size: 1.25rem;
+    }
+
+    .modal-close:hover {
+      background-color: #e5e7eb;
+    }
+
+    .modal-image {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .modal-price {
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-details {
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-details h3 {
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    .modal-details p {
+      color: #6b7280;
+      margin-bottom: 1rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .modal-button {
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .modal-button.secondary {
+      background-color: white;
+      border: 1px solid #e5e7eb;
+    }
+
+    .modal-button.secondary:hover {
+      background-color: #f9fafb;
+    }
+
+    .modal-button.primary {
+      background-color: #25D366;
+      color: white;
+      border: none;
+    }
+
+    .modal-button.primary:hover {
+      background-color: #128C7E;
+    }
+
+    /* Animations */
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slide-up {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .animate-fade-in {
+      animation: fade-in 0.5s ease-out forwards;
+    }
+
+    .animate-slide-up {
+      animation: slide-up 0.5s ease-out forwards;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .whatsapp-float {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-container">
+      <div class="logo-container">
+        <!-- <img src="kitchen-logo.svg" alt="Kitchen Shop Logo" class="logo-img" 
+             onerror="this.src='https://via.placeholder.com/32/E07A5F/FFFFFF?text=K'; this.onerror=null;"> -->
+        <h1 class="logo-text">CocinaElite</h1>
+      </div>
+      
+      <div class="menu-container">
+        <button class="menu-button" id="menuButton">
+          <span>Menú</span>
+          <i class="lucide lucide-chevron-down" id="menuIcon"></i>
+        </button>
+        
+        <div class="dropdown-menu" id="dropdownMenu">
+          <a href="#inicio" class="dropdown-item">Inicio</a>
+          <a href="#productos" class="dropdown-item">Productos</a>
+          <a href="#contacto" class="dropdown-item">Contacto</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section id="inicio" class="hero-section">
+    <div class="hero-content">
+      <div class="hero-text animate-fade-in">
+        <h1 class="hero-title">Artículos de Cocina Premium</h1>
+        <p class="hero-description">Descubre nuestra selección de utensilios y accesorios de alta calidad para chefs profesionales y aficionados.</p>
+      </div>
+      
+      <div class="hero-image-container animate-slide-up">
+        <img src="https://images.unsplash.com/photo-1618160702438-9b02ab6515c9" 
+             alt="Artículos de cocina" 
+             class="hero-image">
+        <div class="image-overlay">
+          <h3>Colección 2025</h3>
+          <p>Elegancia y funcionalidad para tu cocina</p>
+        </div>
+      </div>
+      
+      <button class="cta-button" id="ctaButton">
+        Ver Productos <i class="lucide lucide-arrow-down"></i>
+      </button>
+    </div>
+  </section>
+
+  <!-- Product Catalog -->
+  <section id="productos" class="product-catalog">
+    <h2 class="section-title">Nuestros Productos</h2>
+    <div class="product-grid" id="productGrid">
+      <!-- Productos se generarán dinámicamente con JavaScript -->
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer id="contacto" class="footer">
+    <div class="footer-container">
+      <h2 class="footer-title">Contáctanos</h2>
+      
+      <div class="contact-info">
+        <div class="contact-item">
+          <h3 class="contact-label">Dirección</h3>
+          <p class="contact-text">Av. Siempre Viva 742, Springfield</p>
+        </div>
+        
+        <div class="contact-item">
+          <h3 class="contact-label">Teléfono</h3>
+          <p class="contact-text">+1 (555) 123-4567</p>
+        </div>
+        
+        <div class="contact-item">
+          <h3 class="contact-label">Email</h3>
+          <p class="contact-text">info@cocinaelite.com</p>
+        </div>
+        
+        <div class="contact-item">
+          <h3 class="contact-label">Horario</h3>
+          <p class="contact-text">Lun-Vie: 9:00 - 18:00<br>Sáb: 10:00 - 14:00</p>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>© <span id="currentYear"></span> CocinaElite. Todos los derechos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- WhatsApp Float Button -->
+  <div class="whatsapp-float" id="whatsappFloat">
+    <a href="https://wa.me/5491100000000" target="_blank" rel="noopener noreferrer" aria-label="Contactar por WhatsApp">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M18.403 5.633A8.919 8.919 0 0 0 12.053 3c-4.948 0-8.976 4.027-8.978 8.977 0 1.582.413 3.126 1.198 4.488L3 21.116l4.759-1.249a8.981 8.981 0 0 0 4.29 1.093h.004c4.947 0 8.975-4.027 8.977-8.977a8.926 8.926 0 0 0-2.627-6.35m-6.35 13.812h-.003a7.446 7.446 0 0 1-3.798-1.041l-.272-.162-2.824.741.753-2.753-.177-.282a7.448 7.448 0 0 1-1.141-3.971c.002-4.114 3.349-7.461 7.465-7.461a7.413 7.413 0 0 1 5.275 2.188 7.42 7.42 0 0 1 2.183 5.279c-.002 4.114-3.349 7.462-7.461 7.462m4.093-5.589c-.225-.113-1.327-.655-1.533-.73-.205-.075-.354-.112-.504.112s-.58.729-.711.879-.262.168-.486.056-.947-.349-1.804-1.113c-.667-.595-1.117-1.329-1.248-1.554s-.014-.346.099-.458c.101-.1.224-.262.336-.393.112-.131.149-.224.224-.374s.038-.281-.019-.393c-.056-.113-.505-1.217-.692-1.666-.181-.434-.366-.375-.504-.382a9.65 9.65 0 0 0-.429-.008.826.826 0 0 0-.599.28c-.206.225-.785.767-.785 1.871s.804 2.171.916 2.321c.112.15 1.582 2.415 3.832 3.387.536.231.954.369 1.279.473.537.171 1.026.146 1.413.089.431-.064 1.327-.542 1.514-1.066.187-.524.187-.973.131-1.067-.056-.094-.207-.151-.43-.263"/>
+      </svg>
+    </a>
+  </div>
+
+  <!-- Product Modal -->
+  <div class="modal-backdrop" id="productModal">
+    <div class="modal-content">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <img id="modalImage" src="" alt="" class="modal-image">
+      <h2 id="modalTitle" class="modal-title"></h2>
+      <p id="modalPrice" class="modal-price"></p>
+      <div class="modal-details">
+        <h3>Descripción:</h3>
+        <p id="modalDescription"></p>
+        <h3>Detalles:</h3>
+        <p id="modalFullDetails"></p>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-button secondary" id="modalCloseButton">Cerrar</button>
+        <button class="modal-button primary" id="modalWhatsappButton">Más información</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set current year in footer
+      document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+      // Mobile menu toggle
+      const menuButton = document.getElementById('menuButton');
+      const dropdownMenu = document.getElementById('dropdownMenu');
+      const menuIcon = document.getElementById('menuIcon');
+      
+      menuButton.addEventListener('click', function() {
+        dropdownMenu.classList.toggle('show');
+        menuIcon.style.transform = dropdownMenu.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0)';
+      });
+
+      // Close menu when clicking outside
+      document.addEventListener('click', function(event) {
+        if (!menuButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
+          dropdownMenu.classList.remove('show');
+          menuIcon.style.transform = 'rotate(0)';
+        }
+      });
+
+      // CTA button scroll to products
+      const ctaButton = document.getElementById('ctaButton');
+      ctaButton.addEventListener('click', function() {
+        document.getElementById('productos').scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // Product data
+      const products = [
+        {
+          id: 1,
+          name: 'Set de Cuchillos Profesionales',
+          image: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9',
+          description: 'Juego completo de cuchillos de acero inoxidable alemán con mango ergonómico.',
+          price: '$89.99',
+          details: 'Incluye cuchillo de chef de 8", cuchillo de pan, cuchillo santoku, tijeras de cocina y afilador. Fabricado con acero de alta calidad resistente a la oxidación. Cuchillas con filo duradero ideales para un uso profesional diario.'
+        },
+
+        {
+          id: 2,
+          name: 'Batidora de Pie 5 Velocidades',
+          image: 'https://images.unsplash.com/photo-1585515320310-259814833e62',
+          description: 'Potente batidora de 800W con tazón de acero inoxidable y múltiples accesorios.',
+          price: '$149.99',
+          details: 'Tazón de 5 litros con asa ergonómica. Incluye batidor plano, batidor de alambre y gancho para masa. Sistema planetario de mezcla para resultados homogéneos. 5 velocidades ajustables para diferentes tipos de preparaciones.'
+        },
+        
+        {
+          id: 3,
+          name: 'Sartén de Hierro Fundido',
+          image: 'https://images.unsplash.com/photo-1620963789210-342e3a13c56a',
+          description: 'Sartén versátil pre-curada lista para usar. Excelente retención y distribución del calor.',
+          price: '$59.99',
+          details: 'Diámetro de 26 cm ideal para todo tipo de cocinas incluidas de inducción. Mango ergonómico resistente al calor. Pre-curada para un uso inmediato. Ideal para sellar carnes, preparar guisos o incluso hornear.'
+        },
+        {
+          id: 4,
+          name: 'Procesador de Alimentos Digital',
+          image: 'https://images.unsplash.com/photo-1585239329605-4e37f9a8cb8c',
+          description: 'Procesador multifuncional con 10 accesorios diferentes para todo tipo de preparaciones.',
+          price: '$129.99',
+          details: 'Potencia de 1000W con control digital de velocidad. Incluye cuchillas para picar, rebanar, rallar, batir y amasar. Tazón de 3.5 litros con sistema de seguridad. Piezas desmontables aptas para lavavajillas.'
+        },
+        {
+          id: 5,
+          name: 'Set de Utensilios de Silicona',
+          image: 'https://images.unsplash.com/photo-1589476993333-f55b84301219',
+          description: 'Conjunto de 8 utensilios de silicona resistentes al calor con mangos ergonómicos.',
+          price: '$34.99',
+          details: 'Incluye espátula, cuchara, espumadera, pinzas, batidor y más. Silicona de grado alimenticio libre de BPA. Resistente hasta 230°C. Mangos ergonómicos antideslizantes. No dañan las superficies antiadherentes.'
+        },
+        {
+          id: 6,
+          name: 'Olla a Presión Programable',
+          image: 'https://images.unsplash.com/photo-1585515320310-259814833e62',
+          description: 'Olla multifuncional con 12 programas preestablecidos y panel digital.',
+          price: '$119.99',
+          details: 'Capacidad de 6 litros ideal para 4-6 personas. 12 programas: arroces, sopas, carnes, yogur, entre otros. Temporizador programable hasta 24 horas. Sistema de seguridad con válvula de liberación automática. Interior de cerámica antiadherente fácil de limpiar.'
+        }
+      ];
+
+      // Render products
+      const productGrid = document.getElementById('productGrid');
+      
+      products.forEach((product, index) => {
+        const productCard = document.createElement('div');
+        productCard.className = 'product-card animate-fade-in';
+        productCard.style.animationDelay = `${index * 100}ms`;
+        productCard.dataset.id = product.id;
+        
+        productCard.innerHTML = `
+          <div class="aspect-square">
+            <img src="${product.image}" alt="${product.name}" class="w-full h-full object-cover">
+          </div>
+          <div class="p-4">
+            <h3 class="font-medium text-lg">${product.name}</h3>
+            <p class="text-muted-foreground text-sm line-clamp-2">${product.description}</p>
+            <p class="font-semibold text-terracotta mt-2">${product.price}</p>
+          </div>
+        `;
+        
+        productCard.addEventListener('click', () => openProductModal(product));
+        productGrid.appendChild(productCard);
+      });
+
+      // Modal functionality
+      const modal = document.getElementById('productModal');
+      const modalImage = document.getElementById('modalImage');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalPrice = document.getElementById('modalPrice');
+      const modalDescription = document.getElementById('modalDescription');
+      const modalFullDetails = document.getElementById('modalFullDetails');
+      const modalClose = document.getElementById('modalClose');
+      const modalCloseButton = document.getElementById('modalCloseButton');
+      const modalWhatsappButton = document.getElementById('modalWhatsappButton');
+      
+      let currentProduct = null;
+      
+      function openProductModal(product) {
+        currentProduct = product;
+        modalImage.src = product.image;
+        modalImage.alt = product.name;
+        modalTitle.textContent = product.name;
+        modalPrice.textContent = product.price;
+        modalDescription.textContent = product.description;
+        modalFullDetails.textContent = product.details;
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+
+
+        openProductModal(product);
+      }
+      
+      function closeModal() {
+        modal.classList.remove('show');
+        document.body.style.overflow = 'auto';
+      }
+      
+      modalClose.addEventListener('click', closeModal);
+      modalCloseButton.addEventListener('click', closeModal);
+
+///
+
+      modalWhatsappButton.addEventListener('click', function() {
+  // Crear mensaje con enlace a la imagen
+  const text = `Hola! Me interesa el producto *${currentProduct.name}* de CocinaElite a ${currentProduct.price}.\n\n` +
+               `*Descripción:* ${currentProduct.description}\n\n` +
+               `Puedes ver el producto aquí: ${window.location.href}#product-${currentProduct.id}\n\n` +
+               `Imagen del producto: ${currentProduct.image}`;
+  
+  // Usar el número correcto de tu código (18294772269)
+  const whatsappUrl = `https://wa.me/18294772269?text=${encodeURIComponent(text)}`;
+  
+  // Abrir WhatsApp en una nueva ventana
+  window.open(whatsappUrl, '_blank');
+});
+
+///
+      
+    //   modalWhatsappButton.addEventListener('click', function() {
+    //     const text = `Hola! Me interesa el producto *${currentProduct.name}* de CocinaElite. ¿Podrías darme más información? ${window.location.href}#product-${currentProduct.id}`;
+    //     const whatsappUrl = `https://wa.me/18294772269?text=${encodeURIComponent(text)}`;
+    //     window.open(whatsappUrl, '_blank');
+    //   });
+      
+      // Close modal when clicking outside content
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          closeModal();
+        }
+      });
+      
+      // Show WhatsApp button on mobile
+      function checkIsMobile() {
+        const whatsappFloat = document.getElementById('whatsappFloat');
+        if (window.innerWidth <= 768) {
+          whatsappFloat.style.display = 'block';
+        } else {
+          whatsappFloat.style.display = 'none';
+        }
+      }
+      
+      window.addEventListener('resize', checkIsMobile);
+      checkIsMobile();
+    });
+  </script>
+</body>
+</html>

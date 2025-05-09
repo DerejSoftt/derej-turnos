@@ -98,7 +98,7 @@ class Turnos(models.Model):
     nombre = models.CharField(max_length=200)
     cedula = models.CharField(max_length=11)
     departamento = models.ForeignKey(Departamento, on_delete=models.CASCADE)
-    referencia = models.CharField(max_length=300, blank=True)
+    descripcion = models.TextField(blank=True, null=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
     hora = models.DateTimeField(auto_now_add=True)
     atendido_por = models.ForeignKey(Usuarios, on_delete=models.SET_NULL, null=True, blank=True)

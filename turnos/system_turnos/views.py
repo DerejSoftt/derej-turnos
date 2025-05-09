@@ -1,4 +1,5 @@
 import random
+from django.contrib.sessions.backends.db import SessionStore  # Importación necesaria
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from .models import Cliente
@@ -17,10 +18,14 @@ import logging
 from django.views.decorators.http import require_POST
 from escpos.printer import Usb
 import time
-from datetime import datetime 
+from datetime import datetime,  timedelta
 from django.db.models import Q
 from django.core.paginator import Paginator
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required, user_passes_test
+
+from django.views.decorators.http import require_GET
+
 
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -28,7 +33,40 @@ from django.http import HttpResponse
 
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_protect
+import pandas as pd
+from django.db import IntegrityError
 
+from django.core.exceptions import PermissionDenied
+from django.db import connection
+
+# from django.template.loader import render_to_string
+
+from django.conf import settings
+
+from io import BytesIO
+from reportlab.pdfgen import canvas
+import pyttsx3
+
+# from reportlab.lib.pagesizes import A4
+# from reportlab.lib.units import mm
+# from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+# from reportlab.platypus import Paragraph, SimpleDocTemplate
+
+
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+
+import time
+import subprocess
+
+import win32print
+import win32api
+import textwrap
+
+from .voice_assistant import Command
+import logging
 
 
 
@@ -62,90 +100,549 @@ def index(request):
     departamentos = Departamento.objects.all().order_by('nombre')
     return render(request, 'system_turnos/index.html', {'departamentos': departamentos})
 
+# def inicio(request, departamento_id=None):
+#     """
+#     Vista para el ingreso de cédula con modal para el turno
+#     """
+#     if departamento_id:
+#         departamento = get_object_or_404(Departamento, pk=departamento_id)
+#         return render(request, 'system_turnos/inicio.html', {'departamento': departamento})
+    
+#     return redirect('index')
+
+
+# @csrf_exempt
+# def verificar_cedula(request):
+#     if request.method == 'POST':
+#         try:
+#             cedula = request.POST.get('cedula', '').strip()
+#             departamento_id = request.POST.get('departamento_id', '').strip()
+
+#             if not cedula or not departamento_id:
+#                 return JsonResponse({
+#                     'status': 'error',
+#                     'message': 'Cédula y departamento son requeridos'
+#                 }, status=400)
+
+#             # Obtener cliente
+#             try:
+#                 cliente = Cliente.objects.get(cedula=cedula)
+#             except Cliente.DoesNotExist:
+#                 return JsonResponse({
+#                     'status': 'error',
+#                     'message': 'Cliente no registrado'
+#                 }, status=404)
+
+#             # Obtener departamento
+#             try:
+#                 departamento = Departamento.objects.get(pk=int(departamento_id))
+#             except (Departamento.DoesNotExist, ValueError):
+#                 return JsonResponse({
+#                     'status': 'error',
+#                     'message': 'Departamento no válido'
+#                 }, status=400)
+
+#             # Generar turno único con reintentos por si hay colisión
+#             max_intentos = 5
+#             intentos = 0
+#             turno_creado = False
+            
+#             while not turno_creado and intentos < max_intentos:
+#                 try:
+#                     # Generar código de turno (2 letras + 3 números)
+#                     letras = ''.join(random.choices(string.ascii_uppercase, k=2))
+#                     numeros = ''.join(random.choices(string.digits, k=3))
+#                     numerodeticker = f"{letras}{numeros}"
+                    
+#                     # Crear el turno
+#                     turno = Turnos.objects.create(
+#                         numerodeticker=numerodeticker,
+#                         nombre=f"{cliente.nombre} {cliente.apellido}",
+#                         cedula=cliente.cedula,
+#                         departamento=departamento,
+#                         estado='pendiente'
+#                     )
+#                     turno_creado = True
+                    
+#                 except IntegrityError:
+#                     # Si hay duplicado, intentar con otro código
+#                     intentos += 1
+#                     continue
+            
+#             if not turno_creado:
+#                 return JsonResponse({
+#                     'status': 'error',
+#                     'message': 'No se pudo generar un turno único después de varios intentos'
+#                 }, status=500)
+
+#             return JsonResponse({
+#                 'status': 'success',
+#                 'turno': numerodeticker,
+#                 'departamento': departamento.nombre,
+#                 'nombre': f"{cliente.nombre} {cliente.apellido}"
+#             })
+
+#         except Exception as e:
+#             return JsonResponse({
+#                 'status': 'error',
+#                 'message': f'Error interno del servidor: {str(e)}'
+#             }, status=500)
+
+#     return JsonResponse({
+#         'status': 'error',
+#         'message': 'Método no permitido'
+#     }, status=405)
+
+
+
+
+# Configuración para impresión
+# try:
+#     import win32print
+#     import win32api
+#     USE_CUPS = False
+# except ImportError:
+#     try:
+#         import cups
+#         USE_CUPS = True
+#     except ImportError:
+#         print("Advertencia: No se encontraron bibliotecas de impresión. La impresión directa no funcionará.")
+#         USE_CUPS = None
+
+
 def inicio(request, departamento_id=None):
-    """
-    Vista para el ingreso de cédula con modal para el turno
-    """
+    """Vista principal para ingreso de cédula"""
     if departamento_id:
         departamento = get_object_or_404(Departamento, pk=departamento_id)
         return render(request, 'system_turnos/inicio.html', {'departamento': departamento})
-    
     return redirect('index')
 
+# def centrar_texto(texto, caracteres=32):
+#     """Centra el texto para impresoras térmicas"""
+#     texto = texto.strip()
+#     espacios = (caracteres - len(texto)) // 2
+#     espacios = max(0, espacios)
+#     return " " * espacios + texto
+
+# def generar_ticket_texto(turno, departamento, nombre):
+#     """Genera el contenido del ticket como texto plano"""
+#     return f"""
+# {centrar_texto("SISTEMA DE TURNOS")}
+# {centrar_texto("----------------------")}
+
+# {centrar_texto(f"DEPTO: {departamento}")}
+# {centrar_texto(f"CLIENTE: {nombre}")}
+
+# {centrar_texto("----------------------")}
+# {centrar_texto("TURNO:")}
+# {centrar_texto(turno, caracteres=24)}
+
+# {centrar_texto("----------------------")}
+# {centrar_texto(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))}
+
+# \n\n\n\x1B@\x1DV1  # Comandos para corte de papel
+# """
+
+# def imprimir_texto_crudo(contenido, printer_name="80mm Series Printer"):
+#     """Envía texto directamente a la impresora térmica"""
+#     try:
+#         # Verificar impresoras disponibles
+#         printers = [printer[2] for printer in win32print.EnumPrinters(
+#             win32print.PRINTER_ENUM_LOCAL | win32print.PRINTER_ENUM_CONNECTIONS)]
+        
+#         if printer_name not in printers:
+#             raise Exception(f"Impresora '{printer_name}' no encontrada")
+        
+#         # Abrir la impresora
+#         hprinter = win32print.OpenPrinter(printer_name)
+        
+#         try:
+#             # Iniciar documento
+#             win32print.StartDocPrinter(hprinter, 1, ("Ticket de Turno", None, "RAW"))
+#             win32print.StartPagePrinter(hprinter)
+            
+#             # Enviar contenido
+#             win32print.WritePrinter(hprinter, contenido.encode('utf-8'))
+            
+#             # Finalizar
+#             win32print.EndPagePrinter(hprinter)
+#             win32print.EndDocPrinter(hprinter)
+#             return True
+#         finally:
+#             win32print.ClosePrinter(hprinter)
+#     except Exception as e:
+#         print(f"Error en impresión directa: {str(e)}")
+#         return False
 
 
+# def inicio(request, departamento_id=None):
+#     """Vista principal para ingreso de cédula"""
+#     if departamento_id:
+#         departamento = get_object_or_404(Departamento, pk=departamento_id)
+#         return render(request, 'system_turnos/inicio.html', {'departamento': departamento})
+#     return redirect('index')
+
+# def centrar_texto(texto, caracteres=32):
+#     """Centra el texto para impresoras térmicas"""
+#     texto = texto.strip()
+#     espacios = (caracteres - len(texto)) // 2
+#     espacios = max(0, espacios)
+#     return " " * espacios + texto
+
+# def generar_ticket_texto(turno, departamento, nombre):
+#     """Genera el contenido del ticket como texto plano"""
+#     return f"""
+# {centrar_texto("SISTEMA DE TURNOS")}
+# {centrar_texto("----------------------")}
+
+# {centrar_texto(f"DEPTO: {departamento}")}
+# {centrar_texto(f"CLIENTE: {nombre}")}
+
+# {centrar_texto("----------------------")}
+# {centrar_texto("TURNO:")}
+# {centrar_texto(turno, caracteres=24)}
+
+# {centrar_texto("----------------------")}
+# {centrar_texto(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))}
+
+# \n\n\n\x1B@\x1DV1  # Comandos para corte de papel
+# """
+
+# def imprimir_texto_crudo(contenido, printer_name="80mm Series Printer"):
+#     """Envía texto directamente a la impresora térmica"""
+#     try:
+#         # Verificar impresoras disponibles
+#         printers = [printer[2] for printer in win32print.EnumPrinters(
+#             win32print.PRINTER_ENUM_LOCAL | win32print.PRINTER_ENUM_CONNECTIONS)]
+        
+#         if printer_name not in printers:
+#             raise Exception(f"Impresora '{printer_name}' no encontrada")
+        
+#         # Abrir la impresora
+#         hprinter = win32print.OpenPrinter(printer_name)
+        
+#         try:
+#             # Iniciar documento
+#             win32print.StartDocPrinter(hprinter, 1, ("Ticket de Turno", None, "RAW"))
+#             win32print.StartPagePrinter(hprinter)
+            
+#             # Enviar contenido
+#             win32print.WritePrinter(hprinter, contenido.encode('utf-8'))
+            
+#             # Finalizar
+#             win32print.EndPagePrinter(hprinter)
+#             win32print.EndDocPrinter(hprinter)
+#             return True
+#         finally:
+#             win32print.ClosePrinter(hprinter)
+#     except Exception as e:
+#         print(f"Error en impresión directa: {str(e)}")
+#         return False
+
+# def imprimir_ticket(turno, departamento, nombre):
+#     """Función principal para imprimir tickets"""
+#     try:
+#         # Generar contenido del ticket
+#         ticket_content = generar_ticket_texto(turno, departamento, nombre)
+        
+#         # Intentar impresión directa
+#         if imprimir_texto_crudo(ticket_content):
+#             return True
+        
+#         # Fallback: Método alternativo con comando COPY
+#         try:
+#             temp_file = os.path.join(os.getenv("TEMP"), f"ticket_{turno}.txt")
+#             with open(temp_file, "w", encoding="utf-8") as f:
+#                 f.write(ticket_content)
+            
+#             command = f'copy /B "{temp_file}" "\\\\DESKTOP-68MH80H\\80mm Series Printer"'
+#             subprocess.run(command, shell=True, timeout=15)
+#             return True
+#         except Exception as e:
+#             print(f"Error en método alternativo: {str(e)}")
+#             return False
+#     except Exception as e:
+#         print(f"Error general al imprimir: {str(e)}")
+#         return False
+
+
+def imprimir_ticket(turno, departamento, nombre,  descripcion):
+    """
+    Imprime un ticket de turno sin abrir diálogos, con texto desplazado y tamaño aumentado.
+    """
+    try:
+        # Configuración de la impresora
+        PRINTER_NAME = "80mm Series Printer"
+        ANCHO_IMPRESORA = 32  # Ancho típico para impresoras de 80mm
+        
+        # Obtener fecha y hora actuales
+        fecha_actual = datetime.now().strftime('%d/%m/%Y')
+        hora_actual = datetime.now().strftime('%H:%M:%S')
+        
+        # Función para desplazar texto
+        def desplazar_texto(texto, espacios=0):
+            return " " * espacios + str(texto).strip()
+        
+        # Crear contenido con mejor formato
+        ticket_content = (
+            "\x1B@"  # Reset completo de la impresora
+            
+            # Encabezado (centrado)
+            "\x1B!\x38"  # Negrita y doble altura
+            f"{desplazar_texto('SISTEMA DE TURNOS', 5)}\n"
+            "\x1B!\x00"  # Restablecer formato
+            f"{desplazar_texto('='*45, 2)}\n\n" # esta son las lineas que tienen los ticker
+            
+            # Número de turno (desplazado y aumentado)
+            "\x1B!\x18"  # Doble altura (más grande que antes)
+            f"{desplazar_texto('Su número de turno', 15)}\n\n\n"  # Añadidos 2 saltos de línea extra
+            "\x1B!\x30"  # Doble altura y ancho (máximo tamaño)
+            f"{desplazar_texto(turno, 10)}\n\n"
+            "\x1B!\x00"  # Restablecer formato
+            f"{desplazar_texto('-'*45, 2)}\n\n"
+            
+            # Información del cliente (desplazada y aumentada)
+            "\x1B!\x08"  # Doble altura
+            f"{desplazar_texto(f'Departamento: {departamento.upper()}', 5)}\n"
+            f"{desplazar_texto(f'Cliente: {nombre.title()}', 5)}\n"
+            f"{desplazar_texto(f'Destino: {descripcion.title()}', 5)}\n"
+            "\x1B!\x00"  # Restablecer formato
+            "\n"
+            
+            # Fecha y hora
+            f"{desplazar_texto(f'Fecha: {fecha_actual}', 2)}\n"
+            f"{desplazar_texto(f'Hora: {hora_actual}', 2)}\n\n"
+            
+            # Pie de página
+            f"{desplazar_texto('Gracias por su visita', 4)}\n"
+            f"{desplazar_texto('Por favor, espere a ser llamado', 1)}\n"
+            
+            # Corte de papel
+            "\n\x1D\x56\x00"
+        )
+        
+        # Enviar directamente a la impresora sin diálogos
+        hprinter = win32print.OpenPrinter(PRINTER_NAME)
+        try:
+            win32print.StartDocPrinter(hprinter, 1, ("Ticket", None, "RAW"))
+            win32print.StartPagePrinter(hprinter)
+            win32print.WritePrinter(hprinter, ticket_content.encode('cp850', errors='replace'))
+            win32print.EndPagePrinter(hprinter)
+            win32print.EndDocPrinter(hprinter)
+            return True
+        finally:
+            win32print.ClosePrinter(hprinter)
+            
+    except Exception as e:
+        print(f"Error al imprimir: {str(e)}")
+        return False
+
+def centrar_texto(texto, ancho_total):
+    """
+    Centra exactamente el texto en el ancho especificado.
+    """
+    texto = texto.strip()
+    if len(texto) >= ancho_total:
+        return texto[:ancho_total]
+    
+    espacios = (ancho_total - len(texto)) // 2
+    return " " * espacios + texto
+
+def desplazar_texto(texto, ancho_total, espacios_extra=0):
+    """
+    Desplaza el texto a la derecha con espacios adicionales.
+    
+    Parámetros:
+        texto: Texto a formatear
+        ancho_total: Ancho máximo de la línea
+        espacios_extra: Número de espacios adicionales para desplazar
+    """
+    texto = texto.strip()
+    if len(texto) >= ancho_total:
+        return texto[:ancho_total]
+    
+    return " " * espacios_extra + texto
+
+def prueba_impresora():
+    """Función para probar directamente la impresora"""
+    test_content = (
+        "\x1B@\x1B!\x08"  # Reset + negrita
+        "PRUEBA DE IMPRESORA\n"
+        "\x1B!\x00"       # Reset
+        "----------------\n"
+        "\x1B!\x10"       # Doble altura
+        "TEST EXITOSO\n"
+        "\x1B!\x00"       # Reset
+        "----------------\n"
+        "\x1DVA0"         # Cortar papel
+    )
+    
+    try:
+        hprinter = win32print.OpenPrinter("80mm Series Printer")
+        win32print.StartDocPrinter(hprinter, 1, ("Test", None, "RAW"))
+        win32print.StartPagePrinter(hprinter)
+        win32print.WritePrinter(hprinter, test_content.encode('cp437'))
+        win32print.EndPagePrinter(hprinter)
+        win32print.EndDocPrinter(hprinter)
+        win32print.ClosePrinter(hprinter)
+        print("Prueba enviada correctamente")
+        return True
+    except Exception as e:
+        print(f"Error en prueba: {str(e)}")
+        return False
 
 
 
 @csrf_exempt
 def verificar_cedula(request):
-    """
-    Vista API para verificación de cédula y generación de turno
-    """
+    """Endpoint completo para verificar cédula y generar turno"""
     if request.method == 'POST':
-        cedula = request.POST.get('cedula', '').strip()
-        departamento_id = request.POST.get('departamento_id', '').strip()
-        
-        if not cedula or not departamento_id:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Cédula y departamento son requeridos'
-            }, status=400)
-        
         try:
-            departamento = Departamento.objects.get(pk=int(departamento_id))
-            
+            # 1. Obtener y validar datos del formulario
+            cedula = request.POST.get('cedula', '').strip()
+            departamento_id = request.POST.get('departamento_id', '').strip()
+            descripcion = request.POST.get('descripcion', '').strip()  # Nuevo campo
+
+            # Validaciones básicas
+            if not cedula or not departamento_id:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Cédula y departamento son requeridos'
+                }, status=400)
+
+            if not cedula.isdigit() or len(cedula) != 11:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Cédula no válida. Debe tener 11 dígitos'
+                }, status=400)
+
+            # 2. Buscar cliente en la base de datos
             try:
                 cliente = Cliente.objects.get(cedula=cedula)
-                
-                # Generar turno único (2 letras + 3 números)
-                letras = random.choices(string.ascii_uppercase, k=2)
-                numeros = random.choices(string.digits, k=3)
-                turno = ''.join(letras + numeros)
-                
-                # Crear y guardar el turno - no incluir idcliente porque no existe en el modelo
-                Turnos.objects.create(
-                    numerodeticker=turno,
-                    nombre=f"{cliente.nombre} {cliente.apellido}",
-                    cedula=cliente.cedula,
-                    departamento=departamento,
-                    estado='pendiente'
-                )
-                
-                return JsonResponse({
-                    'status': 'success',
-                    'turno': turno,
-                    'departamento': departamento.nombre,
-                    'nombre': f"{cliente.nombre} {cliente.apellido}"
-                })
-                
             except Cliente.DoesNotExist:
                 return JsonResponse({
                     'status': 'error',
-                    'message': 'Usted no está registrado en nuestra base de datos'
+                    'message': 'Cliente no registrado'
                 }, status=404)
-                
-        except Departamento.DoesNotExist:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Departamento no válido'
-            }, status=404)
+
+            # 3. Verificar departamento
+            try:
+                departamento = Departamento.objects.get(pk=int(departamento_id))
+            except (Departamento.DoesNotExist, ValueError):
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Departamento no válido'
+                }, status=400)
+
+            # 4. Generar turno único
+            max_intentos = 5
+            intentos = 0
+            turno_creado = False
+            numerodeticker = ""
             
+            while not turno_creado and intentos < max_intentos:
+                try:
+                    letras = ''.join(random.choices(string.ascii_uppercase, k=2))
+                    numeros = ''.join(random.choices(string.digits, k=3))
+                    numerodeticker = f"{letras}{numeros}"
+                    
+                    turno = Turnos.objects.create(
+                        numerodeticker=numerodeticker,
+                        nombre=f"{cliente.nombre} {cliente.apellido}",
+                        cedula=cliente.cedula,
+                        departamento=departamento,
+                        descripcion=descripcion,  # Guardar descripción
+                        estado='pendiente'
+                    )
+                    turno_creado = True
+                except IntegrityError:
+                    intentos += 1
+                    continue
+            
+            if not turno_creado:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'No se pudo generar un turno único'
+                }, status=500)
+
+            # 5. Imprimir ticket
+            impreso = imprimir_ticket(
+                turno=numerodeticker,
+                departamento=departamento.nombre,
+                nombre=f"{cliente.nombre} {cliente.apellido}",
+                descripcion=descripcion  # Pasar descripción a la impresión
+            )
+
+            # 6. Retornar respuesta exitosa
+            return JsonResponse({
+                'status': 'success',
+                'turno': numerodeticker,
+                'departamento': departamento.nombre,
+                'nombre': f"{cliente.nombre} {cliente.apellido}",
+                'descripcion': descripcion,
+                'fecha': datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                'impreso': impreso
+            })
+
         except Exception as e:
-            # Imprime el error en la consola para diagnóstico
+            # 7. Manejo de errores generales
             import traceback
-            print(f"Error: {str(e)}")
-            print(traceback.format_exc())
-            
+            print(f"Error en verificar_cedula: {str(e)}\n{traceback.format_exc()}")
             return JsonResponse({
                 'status': 'error',
-                'message': f'Error al procesar su solicitud: {str(e)}'
+                'message': f'Error interno del servidor: {str(e)}'
             }, status=500)
-    
+
+    # 8. Manejo de métodos no permitidos
     return JsonResponse({
         'status': 'error',
         'message': 'Método no permitido'
     }, status=405)
+
+
+def verificar_impresora():
+    try:
+        # Listar todas las impresoras disponibles
+        printers = win32print.EnumPrinters(win32print.PRINTER_ENUM_LOCAL | win32print.PRINTER_ENUM_CONNECTIONS)
+        print("Impresoras disponibles:")
+        for i, printer in enumerate(printers, 1):
+            print(f"{i}. {printer[2]}")
+        
+        # Verificar conexión con la impresora específica
+        PRINTER_NAME = "80mm Series Printer"
+        if PRINTER_NAME in [p[2] for p in printers]:
+            hprinter = win32print.OpenPrinter(PRINTER_NAME)
+            win32print.ClosePrinter(hprinter)
+            print(f"\n✅ La impresora '{PRINTER_NAME}' está conectada correctamente")
+            return True
+        else:
+            print(f"\n❌ La impresora '{PRINTER_NAME}' no fue encontrada")
+            return False
+    except Exception as e:
+        print(f"\n❌ Error al verificar impresora: {str(e)}")
+        return False
+
+def incrementar_letras(letras):
+    """Incrementa letras en secuencia (AA->AB, AZ->BA, ZZ->AAA)"""
+    letras = list(letras.upper())
+    carry = True
+    i = len(letras) - 1
+    
+    while carry and i >= 0:
+        if letras[i] == 'Z':
+            letras[i] = 'A'
+            i -= 1
+        else:
+            letras[i] = chr(ord(letras[i]) + 1)
+            carry = False
+    
+    if carry:
+        letras.insert(0, 'A')
+    
+    return ''.join(letras)
+
+
+
 
 
 
@@ -380,28 +877,62 @@ def update_user(request, user_id):
 
 
 
+# def vistadeturnos(request):
+#     query = request.GET.get('q', '')
+#     estado = request.GET.get('estado', 'pendiente')  # Por defecto solo pendientes
+    
+#     # Consulta base - Orden ascendente por hora
+#     turnos_list = Turnos.objects.all().order_by('hora')
+    
+#     # Filtrado principal
+#     if estado == 'pendiente':
+#         turnos_list = turnos_list.exclude(estado__in=['atendido', 'cancelado'])
+#     elif estado in ['atendido', 'cancelado']:
+#         turnos_list = turnos_list.filter(estado=estado)
+#     # Si estado == 'todos' no aplicamos filtro adicional
+    
+#     # Búsqueda adicional
+#     if query:
+#         turnos_list = turnos_list.filter(
+#             Q(numerodeticker__icontains=query) | 
+#             Q(cedula__icontains=query)
+#         )
+    
+#     paginator = Paginator(turnos_list, 10)
+#     page_number = request.GET.get('page')
+#     turnos = paginator.get_page(page_number)
+    
+#     context = {
+#         'turnos': turnos,
+#         'query': query,
+#         'estado_seleccionado': estado
+#     }
+#     return render(request, 'system_turnos/vistadeturnos.html', context)
 
 
 def vistadeturnos(request):
-    # Obtener parámetros de búsqueda y filtrado
     query = request.GET.get('q', '')
-    estado = request.GET.get('estado', 'todos')
+    estado = request.GET.get('estado', 'pendiente')
     
-    # Consulta base - Orden ascendente por hora (más antiguos primero)
-    turnos_list = Turnos.objects.all().order_by('hora')
+    # Consulta base ordenando por número de ticket (asumiendo que numerodeticker es tipo string)
+    turnos_list = Turnos.objects.all().order_by('numerodeticker')
     
-    # Aplicar filtros
+    # Filtrado principal
+    if estado == 'pendiente':
+        turnos_list = turnos_list.exclude(estado__in=['atendido', 'cancelado'])
+    elif estado in ['atendido', 'cancelado']:
+        turnos_list = turnos_list.filter(estado=estado)
+    
+    # Búsqueda adicional
     if query:
         turnos_list = turnos_list.filter(
             Q(numerodeticker__icontains=query) | 
-            Q(cedula__icontains=query)
-        )
+            Q(cedula__icontains=query))
     
-    if estado != 'todos':
-        turnos_list = turnos_list.filter(estado=estado)
+    # Agrupar por departamento manteniendo el orden numérico
+    turnos_list = turnos_list.select_related('departamento').order_by('departamento__nombre', 'numerodeticker')
     
-    # Paginación
-    paginator = Paginator(turnos_list, 10)  # 10 turnos por página
+    paginator = Paginator(turnos_list, 10)
     page_number = request.GET.get('page')
     turnos = paginator.get_page(page_number)
     
@@ -413,13 +944,150 @@ def vistadeturnos(request):
     return render(request, 'system_turnos/vistadeturnos.html', context)
 
 
+def llamar_turno(request, ticket_id):
+    try:
+        turno = Turnos.objects.get(numerodeticker=ticket_id)
+        turno.estado = 'llamando'
+        turno.save()
+        
+        # Notificar a través de WebSocket
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "turnos",
+            {
+                "type": "turno_update",
+                "data": {
+                    "numerodeticker": turno.numerodeticker,
+                    "estado": turno.estado,
+                    "departamento": {
+                        "nombre": turno.departamento.nombre,
+                        "descripcion": turno.departamento.descripcion
+                    },
+                    "action": "llamar"  # Nueva propiedad para identificar la acción
+                }
+            }
+        )
+        return JsonResponse({'success': True})
+    except Turnos.DoesNotExist:
+        return JsonResponse({'error': 'Turno no encontrado'}, status=404)
 
 def reporte(request):
-    return render (request, 'system_turnos/reporte.html')
+    # Obtener el período seleccionado (por defecto semana)
+    period = request.GET.get('period', 'week')
+    
+    # Calcular fechas según el período
+    today = datetime.now().date()
+    if period == 'day':
+        start_date = today
+    elif period == 'week':
+        start_date = today - timedelta(days=today.weekday())  # Lunes de esta semana
+    elif period == 'month':
+        start_date = today.replace(day=1)
+    elif period == 'year':
+        start_date = today.replace(month=1, day=1)
+    else:
+        start_date = today - timedelta(days=today.weekday())  # Por defecto semana
+    
+    # Filtrar turnos por período
+    turnos = Turnos.objects.filter(hora__date__gte=start_date)
+    
+    # Convertir a DataFrame de pandas
+    df = pd.DataFrame.from_records(turnos.values(
+        'id', 'numerodeticker', 'departamento__nombre', 'estado', 'hora'
+    ))
+    
+    # Si hay datos, procesarlos
+    if not df.empty:
+        # Convertir hora a datetime
+        df['hora'] = pd.to_datetime(df['hora'])
+        
+        # Contar turnos por departamento
+        dept_counts = df['departamento__nombre'].value_counts().reset_index()
+        dept_counts.columns = ['departamento', 'total']
+        
+        # Calcular porcentajes
+        total_turnos = dept_counts['total'].sum()
+        dept_counts['porcentaje'] = round((dept_counts['total'] / total_turnos) * 100, 1)
+        
+        # Ordenar por cantidad descendente
+        dept_counts = dept_counts.sort_values('total', ascending=False)
+        
+        # Preparar datos para el gráfico
+        labels = dept_counts['departamento'].tolist()
+        data = dept_counts['total'].tolist()
+        
+        # Departamento más activo
+        dept_mas_activo = dept_counts.iloc[0]['departamento']
+        turnos_dept_mas_activo = dept_counts.iloc[0]['total']
+        
+        # Calcular promedio diario
+        if period == 'day':
+            avg_daily = total_turnos
+        else:
+            days = (today - start_date).days + 1
+            avg_daily = round(total_turnos / days, 1)
+        
+        # Calcular cambio porcentual vs período anterior
+        cambio_porcentual = calcular_cambio_porcentual(period, total_turnos)
+    else:
+        labels = []
+        data = []
+        dept_mas_activo = "N/A"
+        turnos_dept_mas_activo = 0
+        avg_daily = 0
+        cambio_porcentual = 0
+    
+    context = {
+        'period': period,
+        'total_turnos': total_turnos if not df.empty else 0,
+        'dept_mas_activo': dept_mas_activo,
+        'turnos_dept_mas_activo': turnos_dept_mas_activo,
+        'avg_daily': avg_daily,
+        'cambio_porcentual': cambio_porcentual,
+        'chart_labels': labels,
+        'chart_data': data,
+        'dept_counts': dept_counts.to_dict('records') if not df.empty else [],
+    }
+    
+    return render(request, 'system_turnos/reporte.html', context)
+
+def calcular_cambio_porcentual(period, current_total):
+    """Calcula el cambio porcentual respecto al período anterior"""
+    if not current_total or current_total == 0:
+        return 0
+    
+    today = datetime.now().date()
+    
+    # Definir fechas del período anterior
+    if period == 'day':
+        start_prev = today - timedelta(days=1)
+        end_prev = start_prev
+    elif period == 'week':
+        start_prev = today - timedelta(days=today.weekday() + 7)
+        end_prev = start_prev + timedelta(days=6)
+    elif period == 'month':
+        start_prev = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
+        end_prev = today.replace(day=1) - timedelta(days=1)
+    elif period == 'year':
+        start_prev = today.replace(year=today.year-1, month=1, day=1)
+        end_prev = today.replace(year=today.year-1, month=12, day=31)
+    
+    # Obtener total del período anterior
+    prev_turnos = Turnos.objects.filter(
+        hora__date__gte=start_prev,
+        hora__date__lte=end_prev
+    ).count()
+    
+    if prev_turnos == 0:
+        return 100  # Si no había datos, consideramos crecimiento del 100%
+    
+    cambio = ((current_total - prev_turnos) / prev_turnos) * 100
+    return round(cambio, 1)
 
 
 
 
+""" 
 def crear_turno(request):
     if request.method == 'POST':
         # ... tu lógica de creación ...
@@ -434,26 +1102,106 @@ def crear_turno(request):
             }
         )
         return JsonResponse({"status": "success", "ticket": nuevo_turno.numerodeticker})
-    
+ """
+
+
+def crear_turno(request):
+    if request.method == 'POST':
+        # Obtener el último número de ticket para el departamento
+        departamento_id = request.POST.get('departamento')
+        ultimo_turno = Turnos.objects.filter(
+            departamento_id=departamento_id
+        ).order_by('-numerodeticker').first()
+        
+        # Generar nuevo número de ticket
+        if ultimo_turno:
+            # Extraer la parte numérica del ticket (asumiendo formato "A001")
+            letra = ultimo_turno.numerodeticker[0]
+            numero = int(ultimo_turno.numerodeticker[1:]) + 1
+            nuevo_numero = f"{letra}{numero:03d}"
+        else:
+            # Primer ticket del departamento
+            departamento = Departamento.objects.get(id=departamento_id)
+            letra_inicial = departamento.nombre[0].upper()
+            nuevo_numero = f"{letra_inicial}001"
+        
+        # Crear el nuevo turno
+        nuevo_turno = Turnos.objects.create(
+            numerodeticker=nuevo_numero,
+            departamento_id=departamento_id,
+            # ... otros campos ...
+        )
+        
+        # Notificar a los clientes via WebSocket
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "turnos_global",
+            {
+                "type": "send.turno_update",
+                "message": {
+                    "action": "nuevo_turno",
+                    "ticket": nuevo_numero,
+                    "departamento": nuevo_turno.departamento.nombre,
+                    "departamento_id": departamento_id
+                }
+            }
+        )
+        
+        return JsonResponse({
+            "status": "success",
+            "ticket": nuevo_numero,
+            "departamento": nuevo_turno.departamento.nombre
+        })
 
 
 
 @csrf_protect
 def iniciosesion(request):
     if request.method == 'POST':
+        # Cerrar cualquier sesión existente primero
+        request.session.flush()
+            
         username = request.POST.get('username')
         password = request.POST.get('password')
+        remember_me = request.POST.get('remember_me')
         
         try:
             usuario = Usuarios.objects.get(nombre_usuario=username, activo=True)
             
             if usuario.check_password(password):
+                # Crear nueva sesión con prefijo de departamento
+                session_key = f"depto_{usuario.departamento.id}_user_{usuario.id}"
+                new_session = SessionStore(session_key=session_key)
+                new_session.create()
+                
+                # Configurar la nueva sesión
+                request.session = new_session
                 request.session['usuario_id'] = usuario.id
                 request.session['departamento_id'] = usuario.departamento.id
                 request.session['nombre_completo'] = f"{usuario.nombre} {usuario.apellido}"
                 request.session['departamento_nombre'] = usuario.departamento.nombre
                 
-                return redirect('control')
+                # Configurar tiempo de sesión
+                if remember_me:
+                    request.session.set_expiry(1209600)  # 2 semanas
+                else:
+                    request.session.set_expiry(0)
+                
+                request.session.save()
+                
+                # Configurar la cookie manualmente
+                response = redirect('control')
+                response.set_cookie(
+                    'sessionid',
+                    request.session.session_key,
+                    max_age=1209600 if remember_me else None,
+                    httponly=True,
+                    secure=False,  # Cambiar a True en producción con HTTPS
+                    samesite='Lax'
+                )
+                
+                return response
+                
             else:
                 messages.error(request, 'Contraseña incorrecta')
         except Usuarios.DoesNotExist:
@@ -461,54 +1209,289 @@ def iniciosesion(request):
     
     return render(request, 'system_turnos/iniciosesion.html')
 
+
+
+
+
 def logout_view(request):
+    if 'session_key' in request.session:
+        # Eliminar la sesión específica de la base de datos
+        from django.contrib.sessions.models import Session
+        try:
+            Session.objects.get(session_key=request.session['session_key']).delete()
+        except Session.DoesNotExist:
+            pass
+            
     request.session.flush()
     return redirect('iniciosesion')
 
+# def control(request):
+#     # Verificar sesión
+#     if 'usuario_id' not in request.session:
+#         return redirect('iniciosesion')
+    
+#     try:
+#         departamento_id = request.session['departamento_id']
+        
+#         # Obtener turnos del departamento del usuario
+#         turnos_pendientes = Turnos.objects.filter(
+#             departamento_id=departamento_id
+#         ).exclude(estado='atendido').exclude(estado='cancelado').order_by('hora')
+        
+#         historial = Turnos.objects.filter(
+#             departamento_id=departamento_id,
+#             estado__in=['atendido', 'cancelado']
+#         ).order_by('-hora')[:20]
+        
+#         context = {
+#             'turnos_pendientes': turnos_pendientes,
+#             'historial': historial,
+#             'usuario': request.session.get('nombre_completo', 'Usuario'),
+#             'departamento': request.session.get('departamento_nombre', 'Departamento')
+#         }
+        
+#         return render(request, 'system_turnos/control.html', context)
+        
+#     except Exception as e:
+#         messages.error(request, f"Error al cargar datos: {str(e)}")
+#         return redirect('iniciosesion')
+
+
+
+# def control(request):
+#     # Verificar sesión
+#     if 'usuario_id' not in request.session:
+#         return redirect('iniciosesion')
+    
+#     try:
+#         departamento_id = request.session['departamento_id']
+        
+#         # Obtener turnos del departamento del usuario
+#         turnos_pendientes = Turnos.objects.filter(
+#             departamento_id=departamento_id
+#         ).exclude(estado='atendido').exclude(estado='cancelado').order_by('hora')
+        
+#         historial = Turnos.objects.filter(
+#             departamento_id=departamento_id,
+#             estado__in=['atendido', 'cancelado']
+#         ).order_by('-hora')[:20]
+        
+#         context = {
+#             'turnos_pendientes': turnos_pendientes,
+#             'historial': historial,
+#             'usuario': request.session.get('nombre_completo', 'Usuario'),
+#             'departamento': request.session.get('departamento_nombre', 'Departamento')
+#         }
+        
+#         return render(request, 'system_turnos/control.html', context)
+        
+#     except Exception as e:
+#         messages.error(request, f"Error al cargar datos: {str(e)}")
+#         return redirect('iniciosesion')
+
+
+# @require_http_methods(["POST"])
+# def actualizar_estado(request):
+#     try:
+#         if 'usuario_id' not in request.session:
+#             return JsonResponse({'error': 'No autenticado'}, status=401)
+            
+#         data = json.loads(request.body)
+#         turno_id = data.get('turno_id')
+#         nuevo_estado = data.get('nuevo_estado')
+        
+#         if not turno_id or not nuevo_estado:
+#             return JsonResponse({'error': 'Datos incompletos'}, status=400)
+        
+#         turno = Turnos.objects.get(id=turno_id)
+        
+#         # Verificar que el turno pertenezca al departamento del usuario
+#         if turno.departamento_id != request.session['departamento_id']:
+#             return JsonResponse({'error': 'No autorizado para este departamento'}, status=403)
+        
+#         # Validar transición de estado
+#         if nuevo_estado not in ['pendiente', 'llamado', 'atendido', 'cancelado']:
+#             return JsonResponse({'error': 'Estado no válido'}, status=400)
+        
+#         # Actualizar estado
+#         turno.estado = nuevo_estado
+#         if nuevo_estado == 'atendido':
+#             turno.atendido_por = Usuarios.objects.get(id=request.session['usuario_id'])
+#         turno.save()
+        
+#         # Obtener listas actualizadas
+#         turnos_pendientes = Turnos.objects.filter(
+#             departamento_id=request.session['departamento_id']
+#         ).exclude(estado='atendido').exclude(estado='cancelado').order_by('hora')
+        
+#         historial = Turnos.objects.filter(
+#             departamento_id=request.session['departamento_id'],
+#             estado__in=['atendido', 'cancelado']
+#         ).order_by('-hora')[:20]
+        
+#         # Preparar respuesta
+#         response_data = {
+#             'success': True,
+#             'turnos_pendientes': [{
+#                 'id': t.id,
+#                 'ticket': t.numerodeticker,
+#                 'paciente': t.nombre,
+#                 'cedula': t.cedula,
+#                 'departamento': t.departamento.nombre,
+#                 'hora': t.hora.strftime("%H:%M %p"),
+#                 'estado': t.estado,
+#                 'referencia': t.referencia or ''
+#             } for t in turnos_pendientes],
+#             'historial': [{
+#                 'id': t.id,
+#                 'ticket': t.numerodeticker,
+#                 'paciente': t.nombre,
+#                 'cedula': t.cedula,
+#                 'departamento': t.departamento.nombre,
+#                 'hora': t.hora.strftime("%H:%M %p"),
+#                 'estado': t.estado,
+#                 'atendido_por': t.atendido_por.nombre if t.atendido_por else ''
+#             } for t in historial]
+#         }
+        
+#         return JsonResponse(response_data)
+        
+#     except Turnos.DoesNotExist:
+#         return JsonResponse({'error': 'Turno no encontrado'}, status=404)
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
+
+
+
+
+# @require_http_methods(["GET"])
+# def obtener_turnos(request):
+#     try:
+#         if 'usuario_id' not in request.session:
+#             return JsonResponse({'error': 'No autenticado'}, status=401)
+            
+#         departamento_id = request.session['departamento_id']
+        
+#         turnos_pendientes = Turnos.objects.filter(
+#             departamento_id=departamento_id
+#         ).exclude(estado='atendido').exclude(estado='cancelado').order_by('hora')
+        
+#         historial = Turnos.objects.filter(
+#             departamento_id=departamento_id,
+#             estado__in=['atendido', 'cancelado']
+#         ).order_by('-hora')[:20]
+        
+#         response_data = {
+#             'turnos_pendientes': [{
+#                 'id': t.id,
+#                 'ticket': t.numerodeticker,  # Cambiar a t.ticket si es necesario
+#                 'paciente': t.nombre,        # Cambiar a t.paciente si es necesario
+#                 'cedula': t.cedula,
+#                 'departamento': t.departamento.nombre,
+#                 'hora': t.hora.strftime("%H:%M %p"),
+#                 'estado': t.estado,
+#                 'referencia': t.referencia or ''
+#             } for t in turnos_pendientes],
+#             'historial': [{
+#                 'id': t.id,
+#                 'ticket': t.numerodeticker,  # Cambiar a t.ticket si es necesario
+#                 'paciente': t.nombre,        # Cambiar a t.paciente si es necesario
+#                 'cedula': t.cedula,
+#                 'departamento': t.departamento.nombre,
+#                 'hora': t.hora.strftime("%H:%M %p"),
+#                 'estado': t.estado
+#             } for t in historial]
+#         }
+        
+#         return JsonResponse(response_data)
+        
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
+    
+
+
+
 def control(request):
+    """Vista principal para el panel de control de turnos"""
     # Verificar sesión
     if 'usuario_id' not in request.session:
         return redirect('iniciosesion')
     
+    # Contexto para la plantilla
+    context = {
+        'usuario': request.session.get('nombre_completo', 'Usuario'),
+        'departamento': request.session.get('departamento_nombre', 'Departamento')
+    }
+    return render(request, 'system_turnos/control.html', context)
+
+@require_http_methods(["GET"])
+def obtener_turnos(request):
+    """Endpoint para obtener los turnos en formato JSON"""
     try:
+        # Verificar autenticación
+        if 'usuario_id' not in request.session:
+            return JsonResponse({'error': 'No autenticado'}, status=401)
+            
         departamento_id = request.session['departamento_id']
         
-        # Obtener turnos del departamento del usuario
+        # Obtener turnos pendientes del departamento
         turnos_pendientes = Turnos.objects.filter(
             departamento_id=departamento_id
         ).exclude(estado='atendido').exclude(estado='cancelado').order_by('hora')
         
+        # Obtener historial reciente
         historial = Turnos.objects.filter(
             departamento_id=departamento_id,
             estado__in=['atendido', 'cancelado']
         ).order_by('-hora')[:20]
         
-        context = {
-            'turnos_pendientes': turnos_pendientes,
-            'historial': historial,
-            'usuario': request.session.get('nombre_completo', 'Usuario'),
-            'departamento': request.session.get('departamento_nombre', 'Departamento')
+        # Preparar respuesta JSON
+        response_data = {
+            'turnos_pendientes': [{
+                'id': t.id,
+                'ticket': t.numerodeticker,
+                'paciente': t.nombre,
+                'cedula': t.cedula,
+                'departamento': t.departamento.nombre,
+                'hora': t.hora.strftime("%H:%M %p"),
+                'estado': t.estado,
+                'referencia': t.descripcion or ''
+            } for t in turnos_pendientes],
+            'historial': [{
+                'id': t.id,
+                'ticket': t.numerodeticker,
+                'paciente': t.nombre,
+                'cedula': t.cedula,
+                'departamento': t.departamento.nombre,
+                'hora': t.hora.strftime("%H:%M %p"),
+                'estado': t.estado,
+                'atendido_por': t.atendido_por.nombre if t.atendido_por else ''
+            } for t in historial]
         }
         
-        return render(request, 'system_turnos/control.html', context)
+        return JsonResponse(response_data)
         
     except Exception as e:
-        messages.error(request, f"Error al cargar datos: {str(e)}")
-        return redirect('iniciosesion')
+        return JsonResponse({'error': str(e)}, status=500)
 
 @require_http_methods(["POST"])
 def actualizar_estado(request):
+    """Endpoint para actualizar el estado de un turno"""
     try:
+        # Verificar autenticación
         if 'usuario_id' not in request.session:
             return JsonResponse({'error': 'No autenticado'}, status=401)
             
+        # Parsear datos JSON
         data = json.loads(request.body)
         turno_id = data.get('turno_id')
         nuevo_estado = data.get('nuevo_estado')
         
+        # Validar datos requeridos
         if not turno_id or not nuevo_estado:
             return JsonResponse({'error': 'Datos incompletos'}, status=400)
         
+        # Obtener el turno
         turno = Turnos.objects.get(id=turno_id)
         
         # Verificar que el turno pertenezca al departamento del usuario
@@ -519,19 +1502,20 @@ def actualizar_estado(request):
         if nuevo_estado not in ['pendiente', 'llamado', 'atendido', 'cancelado']:
             return JsonResponse({'error': 'Estado no válido'}, status=400)
         
-        # Actualizar estado
+        # Actualizar estado del turno
         turno.estado = nuevo_estado
         if nuevo_estado == 'atendido':
             turno.atendido_por = Usuarios.objects.get(id=request.session['usuario_id'])
         turno.save()
         
-        # Obtener listas actualizadas
+        # Obtener datos actualizados para la respuesta
+        departamento_id = request.session['departamento_id']
         turnos_pendientes = Turnos.objects.filter(
-            departamento_id=request.session['departamento_id']
+            departamento_id=departamento_id
         ).exclude(estado='atendido').exclude(estado='cancelado').order_by('hora')
         
         historial = Turnos.objects.filter(
-            departamento_id=request.session['departamento_id'],
+            departamento_id=departamento_id,
             estado__in=['atendido', 'cancelado']
         ).order_by('-hora')[:20]
         
@@ -546,7 +1530,7 @@ def actualizar_estado(request):
                 'departamento': t.departamento.nombre,
                 'hora': t.hora.strftime("%H:%M %p"),
                 'estado': t.estado,
-                'referencia': t.referencia or ''
+                'referencia': t.descripcion or ''
             } for t in turnos_pendientes],
             'historial': [{
                 'id': t.id,
@@ -567,49 +1551,156 @@ def actualizar_estado(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+def administracion(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None and user.is_superuser:
+            login(request, user)
+            return redirect('reporte')  # Asegúrate que 'reporte' sea el nombre de tu URL
+        else:
+            messages.error(request, 'Usuario o contraseña incorrectos')
+
+    return render(request, 'system_turnos/administracion.html')
 
 
 
-@require_http_methods(["GET"])
-def obtener_turnos(request):
+
+def mantenimiento(request):
+    return render(request, 'system_turnos/mantenimiento.html')
+   
+
+
+@csrf_exempt
+@require_POST
+def verificar_superusuario(request):
+    """Verifica las credenciales del superusuario"""
     try:
-        if 'usuario_id' not in request.session:
-            return JsonResponse({'error': 'No autenticado'}, status=401)
-            
-        departamento_id = request.session['departamento_id']
+        data = json.loads(request.body)
+        username = data.get('username')
+        password = data.get('password')
         
-        turnos_pendientes = Turnos.objects.filter(
-            departamento_id=departamento_id
-        ).exclude(estado='atendido').exclude(estado='cancelado').order_by('hora')
+        user = authenticate(request, username=username, password=password)
         
-        historial = Turnos.objects.filter(
-            departamento_id=departamento_id,
-            estado__in=['atendido', 'cancelado']
-        ).order_by('-hora')[:20]
+        if user is not None and user.is_superuser:
+            login(request, user)
+            return JsonResponse({
+                'success': True, 
+                'nombre': user.get_full_name() or user.username
+            })
+        return JsonResponse({
+            'success': False, 
+            'error': 'Credenciales inválidas o usuario no es superadministrador'
+        }, status=401)
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        }, status=500)
+
+@csrf_exempt
+@require_POST
+def limpiar_turnos(request):
+    """Elimina turnos según los parámetros recibidos"""
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        raise PermissionDenied("Acceso denegado")
+    
+    try:
+        data = json.loads(request.body)
+        tipo = data.get('tipo')
         
-        response_data = {
-            'turnos_pendientes': [{
-                'id': t.id,
-                'ticket': t.numerodeticker,  # Cambiar a t.ticket si es necesario
-                'paciente': t.nombre,        # Cambiar a t.paciente si es necesario
-                'cedula': t.cedula,
-                'departamento': t.departamento.nombre,
-                'hora': t.hora.strftime("%H:%M %p"),
-                'estado': t.estado,
-                'referencia': t.referencia or ''
-            } for t in turnos_pendientes],
-            'historial': [{
-                'id': t.id,
-                'ticket': t.numerodeticker,  # Cambiar a t.ticket si es necesario
-                'paciente': t.nombre,        # Cambiar a t.paciente si es necesario
-                'cedula': t.cedula,
-                'departamento': t.departamento.nombre,
-                'hora': t.hora.strftime("%H:%M %p"),
-                'estado': t.estado
-            } for t in historial]
-        }
+        if tipo == 'all':
+            Turnos.objects.all().delete()
+            message = "Todos los turnos han sido eliminados"
+        elif tipo == 'old':
+            fecha = data.get('fecha')
+            Turnos.objects.filter(hora__lt=fecha).delete()
+            message = f"Turnos anteriores a {fecha} eliminados"
+        elif tipo == 'status':
+            estado = data.get('estado')
+            Turnos.objects.filter(estado=estado).delete()
+            message = f"Turnos con estado {estado} eliminados"
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Tipo de limpieza no válido'
+            }, status=400)
         
-        return JsonResponse(response_data)
+        return JsonResponse({
+            'success': True,
+            'message': message
+        })
         
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+
+
+@require_GET
+def obtener_estadisticas_turnos(request):
+    try:
+        from django.db import connection
+        table_name = Turnos._meta.db_table  # Obtiene el nombre real de la tabla
+        
+        with connection.cursor() as cursor:
+            cursor.execute(f"""
+                SELECT 
+                    estado, 
+                    COUNT(*) as total 
+                FROM {table_name} 
+                GROUP BY estado
+            """)
+            rows = cursor.fetchall()
+            
+            # Procesar resultados
+            stats = {
+                'pendiente': 0,
+                'atendido': 0,
+                'cancelado': 0
+            }
+            
+            for estado, total in rows:
+                stats[estado] = total
+            
+            # Obtener total general
+            cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+            total_general = cursor.fetchone()[0]
+            
+            return JsonResponse({
+                'success': True,
+                'total': total_general,
+                'pendientes': stats['pendiente'],
+                'atendidos': stats['atendido'],
+                'cancelados': stats['cancelado']
+            })
+            
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+    
+
+
+
+
+
+
+def turnos_llamados(request):
+    turnos = Turnos.objects.filter(estado='llamado').select_related('departamento')
+    data = [{
+        'numerodeticker': t.numerodeticker,
+        'departamento': {
+            'nombre': t.departamento.nombre,
+            'descripcion': t.departamento.descripcion
+        },
+        'estado': t.estado
+    } for t in turnos]
+    return JsonResponse(data, safe=False)
