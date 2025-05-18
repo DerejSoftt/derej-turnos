@@ -27,7 +27,7 @@ SECRET_KEY = "django-insecure-wal^7hcu^s1-gn8x3dup65^vp6m(3#d#zc0*5kf2ixic*y_=u=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['192.168.1.108', 'localhost']
 
 
 # Application definition
@@ -90,8 +90,8 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "turnos",
-        "USER": "root",
-        "PASSWORD": "",
+        "USER": "pope",
+        "PASSWORD": "almagedon2025",
         "HOST": "localhost",
         "PORT": "3306",
         "OPTIONS": {
@@ -156,3 +156,17 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Para evitar colisiones de sesión
 
 SESSION_SAVE_EVERY_REQUEST = True
+
+
+
+STATIC_URL = "static/"
+STATICFILES_DIRS = (
+     os.path.join(BASE_DIR, 'static'),
+ )
+
+
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+     os.path.join(BASE_DIR, 'static')
+]
