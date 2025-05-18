@@ -492,7 +492,6 @@ def prueba_impresora():
         return False
 
 
-
 @csrf_exempt
 def verificar_cedula(request):
     """Endpoint completo para verificar cédula y generar turno"""
@@ -501,7 +500,7 @@ def verificar_cedula(request):
             # 1. Obtener y validar datos del formulario
             cedula = request.POST.get('cedula', '').strip()
             departamento_id = request.POST.get('departamento_id', '').strip()
-            descripcion = request.POST.get('descripcion', '').strip()  # Nuevo campo
+            descripcion = request.POST.get('descripcion', '').strip()
 
             # Validaciones básicas
             if not cedula or not departamento_id:
@@ -528,55 +527,50 @@ def verificar_cedula(request):
             # 3. Verificar departamento
             try:
                 departamento = Departamento.objects.get(pk=int(departamento_id))
+                inicial = departamento.nombre[0].upper()
             except (Departamento.DoesNotExist, ValueError):
                 return JsonResponse({
                     'status': 'error',
                     'message': 'Departamento no válido'
                 }, status=400)
 
-            # 4. Generar turno único
-            max_intentos = 5
-            intentos = 0
-            turno_creado = False
-            numerodeticker = ""
+            # 4. Generar turno con formato DEPARTAMENTO + NÚMERO
+            ultimo_turno = Turnos.objects.filter(
+                departamento_id=departamento_id,
+                numerodeticker__startswith=inicial
+            ).order_by('-numerodeticker').first()
             
-            while not turno_creado and intentos < max_intentos:
+            if ultimo_turno:
                 try:
-                    letras = ''.join(random.choices(string.ascii_uppercase, k=2))
-                    numeros = ''.join(random.choices(string.digits, k=3))
-                    numerodeticker = f"{letras}{numeros}"
-                    
-                    turno = Turnos.objects.create(
-                        numerodeticker=numerodeticker,
-                        nombre=f"{cliente.nombre} {cliente.apellido}",
-                        cedula=cliente.cedula,
-                        departamento=departamento,
-                        descripcion=descripcion,  # Guardar descripción
-                        estado='pendiente'
-                    )
-                    turno_creado = True
-                except IntegrityError:
-                    intentos += 1
-                    continue
+                    numero = int(ultimo_turno.numerodeticker[len(inicial):]) + 1
+                    nuevo_numero = f"{inicial}{numero}"
+                except ValueError:
+                    nuevo_numero = f"{inicial}1"
+            else:
+                nuevo_numero = f"{inicial}1"
             
-            if not turno_creado:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'No se pudo generar un turno único'
-                }, status=500)
+            # Crear el turno
+            turno = Turnos.objects.create(
+                numerodeticker=nuevo_numero,
+                nombre=f"{cliente.nombre} {cliente.apellido}",
+                cedula=cliente.cedula,
+                departamento=departamento,
+                descripcion=descripcion,
+                estado='pendiente'
+            )
 
             # 5. Imprimir ticket
             impreso = imprimir_ticket(
-                turno=numerodeticker,
+                turno=nuevo_numero,
                 departamento=departamento.nombre,
                 nombre=f"{cliente.nombre} {cliente.apellido}",
-                descripcion=descripcion  # Pasar descripción a la impresión
+                descripcion=descripcion
             )
 
             # 6. Retornar respuesta exitosa
             return JsonResponse({
                 'status': 'success',
-                'turno': numerodeticker,
+                'turno': nuevo_numero,
                 'departamento': departamento.nombre,
                 'nombre': f"{cliente.nombre} {cliente.apellido}",
                 'descripcion': descripcion,
@@ -585,7 +579,6 @@ def verificar_cedula(request):
             })
 
         except Exception as e:
-            # 7. Manejo de errores generales
             import traceback
             print(f"Error en verificar_cedula: {str(e)}\n{traceback.format_exc()}")
             return JsonResponse({
@@ -593,12 +586,10 @@ def verificar_cedula(request):
                 'message': f'Error interno del servidor: {str(e)}'
             }, status=500)
 
-    # 8. Manejo de métodos no permitidos
     return JsonResponse({
         'status': 'error',
         'message': 'Método no permitido'
     }, status=405)
-
 
 def verificar_impresora():
     try:
@@ -914,8 +905,8 @@ def vistadeturnos(request):
     query = request.GET.get('q', '')
     estado = request.GET.get('estado', 'pendiente')
     
-    # Consulta base ordenando por número de ticket (asumiendo que numerodeticker es tipo string)
-    turnos_list = Turnos.objects.all().order_by('numerodeticker')
+    # Consulta base
+    turnos_list = Turnos.objects.all()
     
     # Filtrado principal
     if estado == 'pendiente':
@@ -929,10 +920,19 @@ def vistadeturnos(request):
             Q(numerodeticker__icontains=query) | 
             Q(cedula__icontains=query))
     
-    # Agrupar por departamento manteniendo el orden numérico
-    turnos_list = turnos_list.select_related('departamento').order_by('departamento__nombre', 'numerodeticker')
+    # Ordenar primero por departamento y luego por número de turno (numéricamente)
+    turnos_list = turnos_list.select_related('departamento')
     
-    paginator = Paginator(turnos_list, 10)
+    # Ordenación personalizada para que los números se ordenen correctamente
+    # Esto ahora maneja el formato D1, D2, D10 (donde D es la inicial del departamento)
+    turnos_ordenados = sorted(turnos_list, 
+        key=lambda t: (
+            t.departamento.nombre, 
+            int(t.numerodeticker[1:]) if t.numerodeticker[1:].isdigit() else 0
+        ))
+    
+    # Paginar la lista ordenada manualmente
+    paginator = Paginator(turnos_ordenados, 10)
     page_number = request.GET.get('page')
     turnos = paginator.get_page(page_number)
     
@@ -942,7 +942,6 @@ def vistadeturnos(request):
         'estado_seleccionado': estado
     }
     return render(request, 'system_turnos/vistadeturnos.html', context)
-
 
 def llamar_turno(request, ticket_id):
     try:
@@ -1105,53 +1104,123 @@ def crear_turno(request):
  """
 
 
+# def crear_turno(request):
+#     if request.method == 'POST':
+#         # Obtener el último número de ticket para el departamento
+#         departamento_id = request.POST.get('departamento')
+#         ultimo_turno = Turnos.objects.filter(
+#             departamento_id=departamento_id
+#         ).order_by('-numerodeticker').first()
+        
+#         # Generar nuevo número de ticket
+#         if ultimo_turno:
+#             # Extraer la parte numérica del ticket (asumiendo formato "A001")
+#             letra = ultimo_turno.numerodeticker[0]
+#             numero = int(ultimo_turno.numerodeticker[1:]) + 1
+#             nuevo_numero = f"{letra}{numero:03d}"
+#         else:
+#             # Primer ticket del departamento
+#             departamento = Departamento.objects.get(id=departamento_id)
+#             letra_inicial = departamento.nombre[0].upper()
+#             nuevo_numero = f"{letra_inicial}001"
+        
+#         # Crear el nuevo turno
+#         nuevo_turno = Turnos.objects.create(
+#             numerodeticker=nuevo_numero,
+#             departamento_id=departamento_id,
+#             # ... otros campos ...
+#         )
+        
+#         # Notificar a los clientes via WebSocket
+#         channel_layer = get_channel_layer()
+#         async_to_sync(channel_layer.group_send)(
+#             "turnos_global",
+#             {
+#                 "type": "send.turno_update",
+#                 "message": {
+#                     "action": "nuevo_turno",
+#                     "ticket": nuevo_numero,
+#                     "departamento": nuevo_turno.departamento.nombre,
+#                     "departamento_id": departamento_id
+#                 }
+#             }
+#         )
+        
+#         return JsonResponse({
+#             "status": "success",
+#             "ticket": nuevo_numero,
+#             "departamento": nuevo_turno.departamento.nombre
+#         })
+
+
+
 def crear_turno(request):
     if request.method == 'POST':
-        # Obtener el último número de ticket para el departamento
-        departamento_id = request.POST.get('departamento')
-        ultimo_turno = Turnos.objects.filter(
-            departamento_id=departamento_id
-        ).order_by('-numerodeticker').first()
-        
-        # Generar nuevo número de ticket
-        if ultimo_turno:
-            # Extraer la parte numérica del ticket (asumiendo formato "A001")
-            letra = ultimo_turno.numerodeticker[0]
-            numero = int(ultimo_turno.numerodeticker[1:]) + 1
-            nuevo_numero = f"{letra}{numero:03d}"
-        else:
-            # Primer ticket del departamento
+        try:
+            # Obtener el departamento seleccionado
+            departamento_id = request.POST.get('departamento')
             departamento = Departamento.objects.get(id=departamento_id)
-            letra_inicial = departamento.nombre[0].upper()
-            nuevo_numero = f"{letra_inicial}001"
-        
-        # Crear el nuevo turno
-        nuevo_turno = Turnos.objects.create(
-            numerodeticker=nuevo_numero,
-            departamento_id=departamento_id,
-            # ... otros campos ...
-        )
-        
-        # Notificar a los clientes via WebSocket
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            "turnos_global",
-            {
-                "type": "send.turno_update",
-                "message": {
-                    "action": "nuevo_turno",
-                    "ticket": nuevo_numero,
-                    "departamento": nuevo_turno.departamento.nombre,
-                    "departamento_id": departamento_id
+            
+            # Obtener la inicial del departamento
+            inicial = departamento.nombre[0].upper()
+            
+            # Obtener el último número de ticket para este departamento
+            ultimo_turno = Turnos.objects.filter(
+                departamento_id=departamento_id,
+                numerodeticker__startswith=inicial
+            ).order_by('-numerodeticker').first()
+            
+            # Generar nuevo número de ticket
+            if ultimo_turno:
+                # Extraer la parte numérica del ticket (ej: N1, N2, etc.)
+                try:
+                    # Eliminar la inicial para obtener solo el número
+                    numero_texto = ultimo_turno.numerodeticker[len(inicial):]
+                    numero = int(numero_texto) + 1
+                    nuevo_numero = f"{inicial}{numero}"
+                except ValueError:
+                    # En caso de error, comenzamos con 1
+                    nuevo_numero = f"{inicial}1"
+            else:
+                # Primer ticket del departamento
+                nuevo_numero = f"{inicial}1"
+            
+            # Crear el nuevo turno
+            nuevo_turno = Turnos.objects.create(
+                numerodeticker=nuevo_numero,
+                departamento_id=departamento_id,
+                nombre=request.POST.get('nombre', ''),
+                cedula=request.POST.get('cedula', ''),
+                descripcion=request.POST.get('descripcion', ''),
+                estado='pendiente'
+            )
+            
+            # Notificar a los clientes via WebSocket
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "turnos_global",
+                {
+                    "type": "send.turno_update",
+                    "message": {
+                        "action": "nuevo_turno",
+                        "ticket": nuevo_numero,
+                        "departamento": nuevo_turno.departamento.nombre,
+                        "departamento_id": departamento_id
+                    }
                 }
-            }
-        )
-        
-        return JsonResponse({
-            "status": "success",
-            "ticket": nuevo_numero,
-            "departamento": nuevo_turno.departamento.nombre
-        })
+            )
+            
+            return JsonResponse({
+                "status": "success",
+                "ticket": nuevo_numero,
+                "departamento": nuevo_turno.departamento.nombre
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                "status": "error",
+                "message": str(e)
+            }, status=500)
 
 
 
@@ -1424,6 +1493,9 @@ def control(request):
     }
     return render(request, 'system_turnos/control.html', context)
 
+
+
+
 @require_http_methods(["GET"])
 def obtener_turnos(request):
     """Endpoint para obtener los turnos en formato JSON"""
@@ -1433,11 +1505,19 @@ def obtener_turnos(request):
             return JsonResponse({'error': 'No autenticado'}, status=401)
             
         departamento_id = request.session['departamento_id']
+        departamento = Departamento.objects.get(id=departamento_id)
+        inicial = departamento.nombre[0].upper()
         
         # Obtener turnos pendientes del departamento
         turnos_pendientes = Turnos.objects.filter(
             departamento_id=departamento_id
-        ).exclude(estado='atendido').exclude(estado='cancelado').order_by('hora')
+        ).exclude(estado='atendido').exclude(estado='cancelado')
+        
+        # Ordenar los turnos pendientes correctamente (por la parte numérica)
+        turnos_pendientes = sorted(
+            turnos_pendientes,
+            key=lambda t: int(t.numerodeticker[len(inicial):]) if t.numerodeticker[len(inicial):].isdigit() else 0
+        )
         
         # Obtener historial reciente
         historial = Turnos.objects.filter(
@@ -1473,6 +1553,8 @@ def obtener_turnos(request):
         
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
 
 @require_http_methods(["POST"])
 def actualizar_estado(request):
