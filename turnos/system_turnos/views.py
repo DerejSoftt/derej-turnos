@@ -29,12 +29,12 @@ from django.views.decorators.http import require_GET
 
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-from django.http import HttpResponse
+#from django.http import HttpResponse
 
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_protect
 import pandas as pd
-from django.db import IntegrityError
+#from django.db import IntegrityError
 
 from django.core.exceptions import PermissionDenied
 from django.db import connection
@@ -43,8 +43,8 @@ from django.db import connection
 
 from django.conf import settings
 
-from io import BytesIO
-from reportlab.pdfgen import canvas
+#from io import BytesIO
+#from reportlab.pdfgen import canvas
 import pyttsx3
 
 # from reportlab.lib.pagesizes import A4
