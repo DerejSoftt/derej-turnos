@@ -70,6 +70,191 @@ import logging
 
 
 
+
+import platform
+from datetime import datetime
+
+# Configuración global de la impresora
+PRINTER_CONFIG = {
+    'windows': {
+        'name': "80mm Series Printer"
+    },
+    'linux': {
+        'type': 'serial',  # Opciones: 'serial', 'usb', 'network'
+        'serial': {
+            'devfile': '/dev/ttyUSB0',
+            'baudrate': 19200,
+            'bytesize': 8,
+            'parity': 'N',
+            'stopbits': 1,
+            'timeout': 1.00,
+            'dsrdtr': True
+        },
+        'usb': {
+            'vendor_id': 0x04b8,
+            'product_id': 0x0202
+        },
+        'network': {
+            'host': "192.168.1.100",
+            'port': 9100
+        }
+    }
+}
+
+def get_printer():
+    """Obtiene la instancia de impresora según el sistema operativo"""
+    sistema = platform.system().lower()
+    
+    if sistema == 'windows':
+        try:
+            import win32print
+            return {'type': 'windows', 'handle': win32print}
+        except ImportError:
+            raise Exception("En Windows se requiere pywin32 instalado")
+    else:
+        try:
+            if PRINTER_CONFIG['linux']['type'] == 'serial':
+                from escpos.printer import Serial
+                return {'type': 'serial', 'handle': Serial(**PRINTER_CONFIG['linux']['serial'])}
+            elif PRINTER_CONFIG['linux']['type'] == 'usb':
+                from escpos.printer import Usb
+                return {'type': 'usb', 'handle': Usb(**PRINTER_CONFIG['linux']['usb'])}
+            elif PRINTER_CONFIG['linux']['type'] == 'network':
+                from escpos.printer import Network
+                return {'type': 'network', 'handle': Network(**PRINTER_CONFIG['linux']['network'])}
+        except ImportError:
+            raise Exception("En Linux se requiere python-escpos instalado")
+
+def imprimir_ticket(turno, departamento, nombre, descripcion):
+    """Función principal de impresión compatible con ambos sistemas"""
+    try:
+        printer = get_printer()
+        sistema = platform.system().lower()
+        
+        # Datos comunes
+        fecha_actual = datetime.now().strftime('%d/%m/%Y')
+        hora_actual = datetime.now().strftime('%H:%M:%S')
+
+        if sistema == 'windows':
+            # Implementación para Windows
+            ticket_content = (
+                "\x1B@\x1B!\x38"
+                f"{'SISTEMA DE TURNOS'.center(32)}\n"
+                "\x1B!\x00"
+                f"{'='*32}\n\n"
+                "\x1B!\x18"
+                "Su número de turno\n\n\n"
+                "\x1B!\x30"
+                f"{turno.center(32)}\n\n"
+                "\x1B!\x00"
+                f"{'-'*32}\n\n"
+                "\x1B!\x08"
+                f"Departamento: {departamento.upper()}\n"
+                f"Cliente: {nombre.title()}\n"
+                f"Destino: {descripcion.title()}\n"
+                "\x1B!\x00\n"
+                f"Fecha: {fecha_actual}\n"
+                f"Hora: {hora_actual}\n\n"
+                "Gracias por su visita\n"
+                "Por favor, espere a ser llamado\n"
+                "\n\x1D\x56\x00"
+            )
+
+            hprinter = printer['handle'].OpenPrinter(PRINTER_CONFIG['windows']['name'])
+            try:
+                printer['handle'].StartDocPrinter(hprinter, 1, ("Ticket", None, "RAW"))
+                printer['handle'].StartPagePrinter(hprinter)
+                printer['handle'].WritePrinter(hprinter, ticket_content.encode('cp850', errors='replace'))
+                printer['handle'].EndPagePrinter(hprinter)
+                printer['handle'].EndDocPrinter(hprinter)
+            finally:
+                printer['handle'].ClosePrinter(hprinter)
+        else:
+            # Implementación para Linux
+            p = printer['handle']
+            
+            p.set(align='center', width=2, height=2)
+            p.text("SISTEMA DE TURNOS\n")
+            p.set(align='center')
+            p.text("=" * 32 + "\n\n")
+            
+            p.set(align='center', width=1, height=1)
+            p.text("Su número de turno\n\n")
+            p.set(align='center', width=3, height=3)
+            p.text(f"{turno}\n\n")
+            
+            p.set(align='left', width=1, height=1)
+            p.text("-" * 32 + "\n\n")
+            p.set(align='left', width=1, height=2)
+            p.text(f"Departamento: {departamento.upper()}\n")
+            p.text(f"Cliente: {nombre.title()}\n")
+            p.text(f"Destino: {descripcion.title()}\n\n")
+            
+            p.set(align='left', width=1, height=1)
+            p.text(f"Fecha: {fecha_actual}\n")
+            p.text(f"Hora: {hora_actual}\n\n")
+            
+            p.set(align='center')
+            p.text("Gracias por su visita\n")
+            p.text("Por favor, espere a ser llamado\n")
+            
+            p.cut()
+            p.close()
+        
+        return True
+    except Exception as e:
+        print(f"Error al imprimir: {str(e)}")
+        return False
+
+def prueba_impresora():
+    """Función de prueba compatible con ambos sistemas"""
+    try:
+        printer = get_printer()
+        sistema = platform.system().lower()
+        
+        if sistema == 'windows':
+            test_content = (
+                "\x1B@\x1B!\x08"
+                "PRUEBA DE IMPRESORA\n"
+                "\x1B!\x00"
+                "----------------\n"
+                "\x1B!\x10"
+                "TEST EXITOSO\n"
+                "\x1B!\x00"
+                "----------------\n"
+                "\x1DVA0"
+            )
+
+            hprinter = printer['handle'].OpenPrinter(PRINTER_CONFIG['windows']['name'])
+            printer['handle'].StartDocPrinter(hprinter, 1, ("Test", None, "RAW"))
+            printer['handle'].StartPagePrinter(hprinter)
+            printer['handle'].WritePrinter(hprinter, test_content.encode('cp437'))
+            printer['handle'].EndPagePrinter(hprinter)
+            printer['handle'].EndDocPrinter(hprinter)
+            printer['handle'].ClosePrinter(hprinter)
+        else:
+            p = printer['handle']
+            p.set(align='center', width=1, height=1)
+            p.text("PRUEBA DE IMPRESORA\n")
+            p.text("-" * 32 + "\n")
+            p.set(align='center', width=2, height=2)
+            p.text("TEST EXITOSO\n")
+            p.set(align='center', width=1, height=1)
+            p.text("-" * 32 + "\n")
+            p.cut()
+            p.close()
+        
+        print("Prueba enviada correctamente")
+        return True
+    except Exception as e:
+        print(f"Error en prueba: {str(e)}")
+        return False
+
+
+
+
+
+
 # Create your views here.
 
 # def index(request):
@@ -366,76 +551,78 @@ def inicio(request, departamento_id=None):
 #         return False
 
 
-def imprimir_ticket(turno, departamento, nombre,  descripcion):
-    """
-    Imprime un ticket de turno sin abrir diálogos, con texto desplazado y tamaño aumentado.
-    """
-    try:
-        # Configuración de la impresora
-        PRINTER_NAME = "80mm Series Printer"
-        ANCHO_IMPRESORA = 32  # Ancho típico para impresoras de 80mm
+
+#codigo original
+# def imprimir_ticket(turno, departamento, nombre,  descripcion):
+#     """
+#     Imprime un ticket de turno sin abrir diálogos, con texto desplazado y tamaño aumentado.
+#     """
+#     try:
+#         # Configuración de la impresora
+#         PRINTER_NAME = "80mm Series Printer"
+#         ANCHO_IMPRESORA = 32  # Ancho típico para impresoras de 80mm
         
-        # Obtener fecha y hora actuales
-        fecha_actual = datetime.now().strftime('%d/%m/%Y')
-        hora_actual = datetime.now().strftime('%H:%M:%S')
+#         # Obtener fecha y hora actuales
+#         fecha_actual = datetime.now().strftime('%d/%m/%Y')
+#         hora_actual = datetime.now().strftime('%H:%M:%S')
         
-        # Función para desplazar texto
-        def desplazar_texto(texto, espacios=0):
-            return " " * espacios + str(texto).strip()
+#         # Función para desplazar texto
+#         def desplazar_texto(texto, espacios=0):
+#             return " " * espacios + str(texto).strip()
         
-        # Crear contenido con mejor formato
-        ticket_content = (
-            "\x1B@"  # Reset completo de la impresora
+#         # Crear contenido con mejor formato
+#         ticket_content = (
+#             "\x1B@"  # Reset completo de la impresora
             
-            # Encabezado (centrado)
-            "\x1B!\x38"  # Negrita y doble altura
-            f"{desplazar_texto('SISTEMA DE TURNOS', 5)}\n"
-            "\x1B!\x00"  # Restablecer formato
-            f"{desplazar_texto('='*45, 2)}\n\n" # esta son las lineas que tienen los ticker
+#             # Encabezado (centrado)
+#             "\x1B!\x38"  # Negrita y doble altura
+#             f"{desplazar_texto('SISTEMA DE TURNOS', 5)}\n"
+#             "\x1B!\x00"  # Restablecer formato
+#             f"{desplazar_texto('='*45, 2)}\n\n" # esta son las lineas que tienen los ticker
             
-            # Número de turno (desplazado y aumentado)
-            "\x1B!\x18"  # Doble altura (más grande que antes)
-            f"{desplazar_texto('Su número de turno', 15)}\n\n\n"  # Añadidos 2 saltos de línea extra
-            "\x1B!\x30"  # Doble altura y ancho (máximo tamaño)
-            f"{desplazar_texto(turno, 10)}\n\n"
-            "\x1B!\x00"  # Restablecer formato
-            f"{desplazar_texto('-'*45, 2)}\n\n"
+#             # Número de turno (desplazado y aumentado)
+#             "\x1B!\x18"  # Doble altura (más grande que antes)
+#             f"{desplazar_texto('Su número de turno', 15)}\n\n\n"  # Añadidos 2 saltos de línea extra
+#             "\x1B!\x30"  # Doble altura y ancho (máximo tamaño)
+#             f"{desplazar_texto(turno, 10)}\n\n"
+#             "\x1B!\x00"  # Restablecer formato
+#             f"{desplazar_texto('-'*45, 2)}\n\n"
             
-            # Información del cliente (desplazada y aumentada)
-            "\x1B!\x08"  # Doble altura
-            f"{desplazar_texto(f'Departamento: {departamento.upper()}', 5)}\n"
-            f"{desplazar_texto(f'Cliente: {nombre.title()}', 5)}\n"
-            f"{desplazar_texto(f'Destino: {descripcion.title()}', 5)}\n"
-            "\x1B!\x00"  # Restablecer formato
-            "\n"
+#             # Información del cliente (desplazada y aumentada)
+#             "\x1B!\x08"  # Doble altura
+#             f"{desplazar_texto(f'Departamento: {departamento.upper()}', 5)}\n"
+#             f"{desplazar_texto(f'Cliente: {nombre.title()}', 5)}\n"
+#             f"{desplazar_texto(f'Destino: {descripcion.title()}', 5)}\n"
+#             "\x1B!\x00"  # Restablecer formato
+#             "\n"
             
-            # Fecha y hora
-            f"{desplazar_texto(f'Fecha: {fecha_actual}', 2)}\n"
-            f"{desplazar_texto(f'Hora: {hora_actual}', 2)}\n\n"
+#             # Fecha y hora
+#             f"{desplazar_texto(f'Fecha: {fecha_actual}', 2)}\n"
+#             f"{desplazar_texto(f'Hora: {hora_actual}', 2)}\n\n"
             
-            # Pie de página
-            f"{desplazar_texto('Gracias por su visita', 4)}\n"
-            f"{desplazar_texto('Por favor, espere a ser llamado', 1)}\n"
+#             # Pie de página
+#             f"{desplazar_texto('Gracias por su visita', 4)}\n"
+#             f"{desplazar_texto('Por favor, espere a ser llamado', 1)}\n"
             
-            # Corte de papel
-            "\n\x1D\x56\x00"
-        )
+#             # Corte de papel
+#             "\n\x1D\x56\x00"
+#         )
         
-        # Enviar directamente a la impresora sin diálogos
-        hprinter = win32print.OpenPrinter(PRINTER_NAME)
-        try:
-            win32print.StartDocPrinter(hprinter, 1, ("Ticket", None, "RAW"))
-            win32print.StartPagePrinter(hprinter)
-            win32print.WritePrinter(hprinter, ticket_content.encode('cp850', errors='replace'))
-            win32print.EndPagePrinter(hprinter)
-            win32print.EndDocPrinter(hprinter)
-            return True
-        finally:
-            win32print.ClosePrinter(hprinter)
+#         # Enviar directamente a la impresora sin diálogos
+#         hprinter = win32print.OpenPrinter(PRINTER_NAME)
+#         try:
+#             win32print.StartDocPrinter(hprinter, 1, ("Ticket", None, "RAW"))
+#             win32print.StartPagePrinter(hprinter)
+#             win32print.WritePrinter(hprinter, ticket_content.encode('cp850', errors='replace'))
+#             win32print.EndPagePrinter(hprinter)
+#             win32print.EndDocPrinter(hprinter)
+#             return True
+#         finally:
+#             win32print.ClosePrinter(hprinter)
             
-    except Exception as e:
-        print(f"Error al imprimir: {str(e)}")
-        return False
+#     except Exception as e:
+#         print(f"Error al imprimir: {str(e)}")
+#         return False
 
 def centrar_texto(texto, ancho_total):
     """
@@ -463,33 +650,33 @@ def desplazar_texto(texto, ancho_total, espacios_extra=0):
     
     return " " * espacios_extra + texto
 
-def prueba_impresora():
-    """Función para probar directamente la impresora"""
-    test_content = (
-        "\x1B@\x1B!\x08"  # Reset + negrita
-        "PRUEBA DE IMPRESORA\n"
-        "\x1B!\x00"       # Reset
-        "----------------\n"
-        "\x1B!\x10"       # Doble altura
-        "TEST EXITOSO\n"
-        "\x1B!\x00"       # Reset
-        "----------------\n"
-        "\x1DVA0"         # Cortar papel
-    )
+# def prueba_impresora():
+#     """Función para probar directamente la impresora"""
+#     test_content = (
+#         "\x1B@\x1B!\x08"  # Reset + negrita
+#         "PRUEBA DE IMPRESORA\n"
+#         "\x1B!\x00"       # Reset
+#         "----------------\n"
+#         "\x1B!\x10"       # Doble altura
+#         "TEST EXITOSO\n"
+#         "\x1B!\x00"       # Reset
+#         "----------------\n"
+#         "\x1DVA0"         # Cortar papel
+#     )
     
-    try:
-        hprinter = win32print.OpenPrinter("80mm Series Printer")
-        win32print.StartDocPrinter(hprinter, 1, ("Test", None, "RAW"))
-        win32print.StartPagePrinter(hprinter)
-        win32print.WritePrinter(hprinter, test_content.encode('cp437'))
-        win32print.EndPagePrinter(hprinter)
-        win32print.EndDocPrinter(hprinter)
-        win32print.ClosePrinter(hprinter)
-        print("Prueba enviada correctamente")
-        return True
-    except Exception as e:
-        print(f"Error en prueba: {str(e)}")
-        return False
+#     try:
+#         hprinter = win32print.OpenPrinter("80mm Series Printer")
+#         win32print.StartDocPrinter(hprinter, 1, ("Test", None, "RAW"))
+#         win32print.StartPagePrinter(hprinter)
+#         win32print.WritePrinter(hprinter, test_content.encode('cp437'))
+#         win32print.EndPagePrinter(hprinter)
+#         win32print.EndDocPrinter(hprinter)
+#         win32print.ClosePrinter(hprinter)
+#         print("Prueba enviada correctamente")
+#         return True
+#     except Exception as e:
+#         print(f"Error en prueba: {str(e)}")
+#         return False
 
 
 @csrf_exempt
@@ -591,27 +778,27 @@ def verificar_cedula(request):
         'message': 'Método no permitido'
     }, status=405)
 
-def verificar_impresora():
-    try:
-        # Listar todas las impresoras disponibles
-        printers = win32print.EnumPrinters(win32print.PRINTER_ENUM_LOCAL | win32print.PRINTER_ENUM_CONNECTIONS)
-        print("Impresoras disponibles:")
-        for i, printer in enumerate(printers, 1):
-            print(f"{i}. {printer[2]}")
+# def verificar_impresora():
+#     try:
+#         # Listar todas las impresoras disponibles
+#         printers = win32print.EnumPrinters(win32print.PRINTER_ENUM_LOCAL | win32print.PRINTER_ENUM_CONNECTIONS)
+#         print("Impresoras disponibles:")
+#         for i, printer in enumerate(printers, 1):
+#             print(f"{i}. {printer[2]}")
         
-        # Verificar conexión con la impresora específica
-        PRINTER_NAME = "80mm Series Printer"
-        if PRINTER_NAME in [p[2] for p in printers]:
-            hprinter = win32print.OpenPrinter(PRINTER_NAME)
-            win32print.ClosePrinter(hprinter)
-            print(f"\n✅ La impresora '{PRINTER_NAME}' está conectada correctamente")
-            return True
-        else:
-            print(f"\n❌ La impresora '{PRINTER_NAME}' no fue encontrada")
-            return False
-    except Exception as e:
-        print(f"\n❌ Error al verificar impresora: {str(e)}")
-        return False
+#         # Verificar conexión con la impresora específica
+#         PRINTER_NAME = "80mm Series Printer"
+#         if PRINTER_NAME in [p[2] for p in printers]:
+#             hprinter = win32print.OpenPrinter(PRINTER_NAME)
+#             win32print.ClosePrinter(hprinter)
+#             print(f"\n✅ La impresora '{PRINTER_NAME}' está conectada correctamente")
+#             return True
+#         else:
+#             print(f"\n❌ La impresora '{PRINTER_NAME}' no fue encontrada")
+#             return False
+#     except Exception as e:
+#         print(f"\n❌ Error al verificar impresora: {str(e)}")
+#         return False
 
 def incrementar_letras(letras):
     """Incrementa letras en secuencia (AA->AB, AZ->BA, ZZ->AAA)"""
