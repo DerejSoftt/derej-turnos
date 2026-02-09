@@ -11,9 +11,10 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
- 
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,18 +22,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-wal^7hcu^s1-gn8x3dup65^vp6m(3#d#zc0*5kf2ixic*y_=u="
+# # SECURITY WARNING: keep the secret key used in production secret!
+# SECRET_KEY = "django-insecure-wal^7hcu^s1-gn8x3dup65^vp6m(3#d#zc0*5kf2ixic*y_=u="
+# # SECURITY WARNING: don't run with debug turned on in production!
+# DEBUG = True
+# # ALLOWED_HOSTS = ['192.168.1.108', 'localhost']
+# ALLOWED_HOSTS = ['*']
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-# ALLOWED_HOSTS = ['192.168.1.108', 'localhost']
-
-ALLOWED_HOSTS = ['*']
-
+SECRET_KEY = os.environ.get('SECRET_KEY') # Obtiene la clave secreta de las variables de entorno
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') # Obtiene los hosts permitidos de las variables de entorno
+DEBUG = os.getenv("DEBUG", "False") == "True" # Obtiene el valor de DEBUG de las variables de entorno
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') # Obtiene los orígenes confiables para CSRF de las variables de entorno
 # Application definition
 
+# https://docs.djangoproject.com/en/5.1/ref/settings/#installed-apps
 INSTALLED_APPS = [
     'channels',
     "system_turnos",
@@ -44,8 +47,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 ]
 
+# https://docs.djangoproject.com/en/5.1/ref/settings/#middleware
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -53,9 +58,12 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# https://docs.djangoproject.com/en/5.1/ref/settings/#root-urlconf
 ROOT_URLCONF = "turnos.urls"
 
+# https://docs.djangoproject.com/en/5.1/ref/settings/#templates
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -73,9 +81,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "turnos.wsgi.application"
+# ASGI_APPLICATION = 'turnos.asgi.application'
 
-
-ASGI_APPLICATION = 'turnos.asgi.application'
 
 # turnos/settings.py
 CHANNEL_LAYERS = {
@@ -87,21 +94,24 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": "turnos",
-        "USER": "root",
-        "PASSWORD": "",
-        "HOST": "localhost",
-        "PORT": "3306",
-        "OPTIONS": {
-            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        # 'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST'),
+        'PORT': os.environ.get('DB_PORT'),
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'", # esto es para mysql
+            # 'sslmode': 'require',
+            # 'options': '-c default_transaction_read_only=off'
         }
     }
 }
-
-
 
 
 
@@ -136,10 +146,22 @@ USE_I18N = True
 USE_TZ = True
 
 
+# Para evitar colisiones de sesión
+SESSION_SAVE_EVERY_REQUEST = True
+
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "/static/"
+# Directorio donde Django almacenará los arachivos subidos (imágenes, documentos, etc.)
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media' # Directorio donde se almacenan los archivos subidos
+
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [
+    BASE_DIR / "static", # Esto apunta a la carpeta 'static' en la raíz
+]
 
 
 
@@ -149,25 +171,11 @@ STATIC_URL = "/static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-MEDIA_URL = 'media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
 
-# Para evitar colisiones de sesión
-
-SESSION_SAVE_EVERY_REQUEST = True
 
 
 
-STATIC_URL = "static/"
-STATICFILES_DIRS = (
-     os.path.join(BASE_DIR, 'static'),
- )
 
 
-
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-     os.path.join(BASE_DIR, 'static')
-]
